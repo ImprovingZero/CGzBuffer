@@ -2,19 +2,70 @@
 //
 
 #include <iostream>
+#include"common.h"
+#include"objReader.h"
+#include"Model.h"
+#include"camera.h"
+#include"PolyList.h"
+#include"..//inc/GL/glut.h"
+#include"ZBuffer.h"
 
-int main()
-{
-    std::cout << "Hello World!\n";
+ZBuffer* img;
+Model model;
+
+void myInit(void) {
+	glColor3f(0.0f, 0.0f, 0.0f);
+	glMatrixMode(GL_PROJECTION);
+	gluOrtho2D(0, U_PIX_NUM, 0, V_PIX_NUM);
 }
 
-// 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
-// 调试程序: F5 或调试 >“开始调试”菜单
+void displayFnc() {
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBegin(GL_POINTS);
+	for (int i = 0; i < U_PIX_NUM; i++) {
+		for (int j = 0; j < V_PIX_NUM; j++) {
+			if (0!= -1) {
+				int id = img->_output[j][i];
+				vec3 c;
+				if (id != -1) c = model._face[id]._color;
+				else c = vec3(0.f, 0.f, 0.f);
+				glColor3f(c[0], c[1], c[2]);
+				//int id = z.buffer[j][i];
+				//glColor3f(z.F[id]._color[0], z.F[id]._color[1], z.F[id]._color[2]);
+				glVertex2f(i, j);
+			}
+		}
+	}
+	glEnd();
+	glFlush();
+}
 
-// 入门使用技巧: 
-//   1. 使用解决方案资源管理器窗口添加/管理文件
-//   2. 使用团队资源管理器窗口连接到源代码管理
-//   3. 使用输出窗口查看生成输出和其他消息
-//   4. 使用错误列表窗口查看错误
-//   5. 转到“项目”>“添加新项”以创建新的代码文件，或转到“项目”>“添加现有项”以将现有代码文件添加到项目
-//   6. 将来，若要再次打开此项目，请转到“文件”>“打开”>“项目”并选择 .sln 文件
+int main(int argc, char* argv[])
+{
+    std::cout << "Hello World!\n";
+	objReader fileReader("0248_00.obj");
+	
+	fileReader.read(model._face, model._pos, model._nml, model._tex);
+	
+	camera cam(vec3(0.f, -50.f, 0.f), vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f), 90, 1.5,20.f);
+	cam._u = vec3(1.f, 0.f, 0.f);
+	cam._v = vec3(0.f, 1.f, 0.f);
+	cam._w = vec3(0.f, 0.f, -1.f);
+	PolyList pll(&model, &cam);
+
+	img = new ZBuffer(&pll);
+	img->generate();
+	std::cout << cam._u << std::endl;
+	std::cout << cam._v << std::endl;
+	std::cout << cam._w << std::endl;
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+	glutInitWindowSize(U_PIX_NUM, V_PIX_NUM);
+	glutInitWindowPosition(200, 200);
+	glutCreateWindow("zbuffer");
+	myInit();
+	glutDisplayFunc(displayFnc);
+	glutMainLoop();
+	
+
+}
