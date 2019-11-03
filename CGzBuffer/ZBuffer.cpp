@@ -24,11 +24,13 @@ void ZBuffer::generate()
 	{
 		refreshLine();
 		scan(i);
+		
 		for (int j = 0; j < U_PIX_NUM; j++)
 		{
 			_output[i][j] = _buffer[j];
 		}
 	}
+	//std::cout << "finish generate" << std::endl;
 }
 
 void ZBuffer::scan(int y)
@@ -43,8 +45,6 @@ void ZBuffer::scan(int y)
 	act->delActiveP(y);
 	//std::cout << "start updateActive" << std::endl;
 	act->updataActiveE(y);
-	//std::cout << "active Ply num: " << act->_actpoly.size() << " active edge num: "
-	//	<< act->_actedge.size() << std::endl;
 	
 	//»æÖÆ
 	//std::cout << "start draw" << std::endl;
@@ -52,6 +52,11 @@ void ZBuffer::scan(int y)
 
 	//Î¬»¤dy
 	act->decDy();
+	
+	
+	
+	//std::cout << "active Ply num: " << act->_actpoly.size() << " active edge num: "
+	//	<< act->_actedge.size() << std::endl;
 }
 
 void ZBuffer::drawCharSrc()

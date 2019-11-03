@@ -1,5 +1,6 @@
 #include "PolyList.h"
 int delActivePolyNum = 0;
+int ActiveEdgeNum = 0;
 
 inline const int minInd(const float a, const float b, const float c)
 {
@@ -94,6 +95,8 @@ void PolyList::calcRangeTEMP(Model* model)
 		_rtemp = c_u + v * ratio / 2;
 	}
 	_scaleZ = (_rtemp - _ltemp) / float(U_PIX_NUM);
+	//_scaleZ = (_utemp - _dtemp) / float(V_PIX_NUM);
+	//_scaleZ = 1.f;
 	//std::cout << _ltemp << ' ' << _rtemp << ' ' << _utemp << ' ' << _dtemp << std::endl;
 }
 
@@ -169,21 +172,28 @@ void PolyList::init()
 		_poly[p[0].y].push_back(
 			new PolyListNode(face._nml, id, p[0].y - p[2].y+1, p[0].z)
 		);
+
+		int EdgeNum = 0;
 		//Edge List: MANY COMPLEX SITUATIONS CANNOT HANDLE
 		for (int i = 0; i < 3; i++)
 		{
 			//tempoutput[p[i].y][p[i].x] = id;
 			std::vector<vec2if> v(0);
 			calcCut(p[i], p[(i + 1) % 3], v);
+			
 			if (!v.empty())
 			{
+				if (v[0].y == v[1].y) continue;
 				_edge[v[0].y].push_back(
 					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id)
 				);
+				EdgeNum++;
 			}
 		}
+		//std::cout << "There are " << EdgeNum << " edges do not parallel to x-axis" << std::endl;
 	}
 	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
+	
 	/*
 	std::cout << "PolyList::init::_poly:\n";
 	for (int i = V_PIX_NUM - 1; i >= 0; i--)
@@ -228,7 +238,7 @@ void PolyList::activeP(int y)
 		int id1=-1, id2=-1;
 		for (int i = 0; i < _edge[y].size(); i++)
 		{
-			if (_edge[y][i]->id == a->id)
+			if (_edge[y][i]->id == a->id && _edge[y][i]->dy!=0)
 			{
 				if (id1 == -1) id1 = i;
 				else { id2 = i; break;}
@@ -310,7 +320,7 @@ void ActiveList::draw(int y, std::vector<float>& depth, std::vector<int>& buffer
 		float z = e->zl;
 		//std::cout  << " --- z: " << z << ' ' << e->id << std::endl;
 		//std::cout << e->dxl << ' ' << e->dxr << std::endl;
-		for (int i = int(e->xl); i <= int(e->xr + 0.99f); i++)
+		for (int i = int(e->xl); i <= int(e->xr); i++)
 		{
 			z += e->dzx;
 			if (z > depth[i])
@@ -322,7 +332,7 @@ void ActiveList::draw(int y, std::vector<float>& depth, std::vector<int>& buffer
 		}
 	}
 	
-	std::cout << delActivePolyNum << std::endl;
+	//std::cout << delActivePolyNum << std::endl;
 }
 
 void ActiveList::decDy()

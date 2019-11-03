@@ -28,7 +28,7 @@ void displayFnc() {
 				int id = img->_output[j][i];
 				vec3 c;
 				if (id != -1) c = model._face[id]._color;
-				else c = vec3(0.f, 0.f, 0.f);
+				else c = vec3(0.7f, 0.7f, 0.3f);
 				glColor3f(c[0], c[1], c[2]);
 				//int id = z.buffer[j][i];
 				//glColor3f(z.F[id]._color[0], z.F[id]._color[1], z.F[id]._color[2]);
@@ -43,7 +43,7 @@ void displayFnc() {
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
-	objReader fileReader("0248_00.obj");
+	objReader fileReader("0000_00#2.obj");
 	
 	fileReader.read(model._face, model._pos, model._nml, model._tex);
 	

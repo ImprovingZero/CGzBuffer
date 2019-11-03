@@ -38,7 +38,15 @@ struct ActiveEdgeNode
 	ActiveEdgeNode(EdgeListNode* e1, EdgeListNode* e2, 
 		vec3& nml, vec3& u, vec3& v, vec3& w, float z, float sc)
 	{
-		if (e1->dx > e2->dx) std::swap(e1, e2); 
+		if (e1->x == e2->x)
+		{
+			if (e1->dx > e2->dx) std::swap(e1, e2);
+		}
+		else
+		{
+			if (e1->x > e2->x) std::swap(e1, e2);
+		}
+		
 		xl = e1->x; xr = e2->x;
 		dxl = e1->dx; dxr = e2->dx;
 		dyl = e1->dy; dyr = e2->dy;
@@ -49,6 +57,8 @@ struct ActiveEdgeNode
 		dzx = -a / c * sc;
 		dzy = b / c * sc;
 		zl = z;
+		//std::cout << xl << ' ' << xr << ' ' << dxl << ' ' << dxr << ' ' << dyl << ' ' << dyr
+		//	<< id << ' ' << dzx << ' ' << dzy << ' ' << zl << std::endl;
 	}
 };
 
