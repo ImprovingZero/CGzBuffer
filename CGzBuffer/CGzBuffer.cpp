@@ -24,16 +24,14 @@ void displayFnc() {
 	glBegin(GL_POINTS);
 	for (int i = 0; i < U_PIX_NUM; i++) {
 		for (int j = 0; j < V_PIX_NUM; j++) {
-			if (0!= -1) {
-				int id = img->_output[j][i];
-				vec3 c;
-				if (id != -1) c = model._face[id]._color;
-				else c = vec3(0.7f, 0.7f, 0.3f);
-				glColor3f(c[0], c[1], c[2]);
+			int id = img->_output[j][i];
+			vec3 c;
+			if (id != -1) c = model._face[id]._color;
+			else c = vec3(0.7f, 0.7f, 0.3f);
+			glColor3f(c[0], c[1], c[2]);
 				//int id = z.buffer[j][i];
 				//glColor3f(z.F[id]._color[0], z.F[id]._color[1], z.F[id]._color[2]);
-				glVertex2f(i, j);
-			}
+			glVertex2f(i, j);
 		}
 	}
 	glEnd();
@@ -43,7 +41,7 @@ void displayFnc() {
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
-	objReader fileReader("0000_00#2.obj");
+	objReader fileReader("0000_00#1.obj");
 	
 	fileReader.read(model._face, model._pos, model._nml, model._tex);
 	

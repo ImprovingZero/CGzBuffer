@@ -11,7 +11,7 @@ private:
 	void refreshOutput();
 public:
 	std::vector<std::vector<int>> _output;
-	std::vector<float> _depth;
+	std::vector<double> _depth;
 	std::vector<int> _buffer;
 	PolyList* _pll;
 

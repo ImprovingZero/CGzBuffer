@@ -29,14 +29,14 @@ struct EdgeListNode
 
 struct ActiveEdgeNode
 {
-	float xl, dxl;
+	double xl, dxl;
 	int dyl;
-	float xr, dxr;
+	double xr, dxr;
 	int dyr;
-	float zl, dzx, dzy;
+	double zl, dzx, dzy;
 	int id;
 	ActiveEdgeNode(EdgeListNode* e1, EdgeListNode* e2, 
-		vec3& nml, vec3& u, vec3& v, vec3& w, float z, float sc)
+		vec3& nml, vec3& u, vec3& v, vec3& w, double z, double sc)
 	{
 		if (e1->x == e2->x)
 		{
@@ -51,9 +51,9 @@ struct ActiveEdgeNode
 		dxl = e1->dx; dxr = e2->dx;
 		dyl = e1->dy; dyr = e2->dy;
 		id = e1->id;
-		float a = nml.dot(u);
-		float b = nml.dot(v);
-		float c = nml.dot(-w);
+		double a = nml.dot(u);
+		double b = nml.dot(v);
+		double c = nml.dot(-w);
 		dzx = -a / c * sc;
 		dzy = b / c * sc;
 		zl = z;

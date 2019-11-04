@@ -141,7 +141,7 @@ void PolyList::init()
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
 		auto face = _model->_face[id];
-		if (abs(face._nml.dot(_cam->_w)) < 1e-6)
+		if (abs(face._nml.dot(_cam->_w)) < 1e-2)
 		{
 			paraCull++;
 			continue;
@@ -170,7 +170,7 @@ void PolyList::init()
 		
 		//Polygon List:
 		_poly[p[0].y].push_back(
-			new PolyListNode(face._nml, id, p[0].y - p[2].y+1, p[0].z)
+			new PolyListNode(face._nml, id, p[0].y - p[2].y, p[0].z)
 		);
 
 		int EdgeNum = 0;
@@ -183,7 +183,7 @@ void PolyList::init()
 			
 			if (!v.empty())
 			{
-				if (v[0].y == v[1].y) continue;
+				//if (v[0].y == v[1].y) continue;
 				_edge[v[0].y].push_back(
 					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id)
 				);
@@ -322,13 +322,13 @@ void ActiveList::draw(int y, std::vector<float>& depth, std::vector<int>& buffer
 		//std::cout << e->dxl << ' ' << e->dxr << std::endl;
 		for (int i = int(e->xl); i <= int(e->xr); i++)
 		{
-			z += e->dzx;
 			if (z > depth[i])
 			{
 				//std::cout << "**********draw: " <<i<< std::endl;
 				depth[i] = z;
 				buffer[i] = e->id;
 			}
+			z += e->dzx;
 		}
 	}
 	
