@@ -31,7 +31,7 @@ void displayFnc() {
 			glColor3f(c[0], c[1], c[2]);
 				//int id = z.buffer[j][i];
 				//glColor3f(z.F[id]._color[0], z.F[id]._color[1], z.F[id]._color[2]);
-			glVertex2f(i, j);
+			glVertex2i(i, j);
 		}
 	}
 	glEnd();

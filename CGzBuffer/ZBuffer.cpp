@@ -36,6 +36,10 @@ void ZBuffer::generate()
 void ZBuffer::scan(int y)
 {
 	//std::cout << "-------Scan: " << y << " ---------\n";
+	if (y % 100 == 0)
+	{
+		std::cout << "Scanning: " << float(V_PIX_NUM-y) / V_PIX_NUM * 100 << " %\n";
+	}
 	PolyList* cls = _pll;
 	ActiveList* act = _pll->_actList;
 	//维护：激活该线上的分类多边形； 到尾端的删掉/维护

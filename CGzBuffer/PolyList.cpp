@@ -117,14 +117,6 @@ void PolyList::calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v)
 
 void PolyList::init()
 {
-	/*
-	for (int i = 0; i < V_PIX_NUM; i++)
-	{
-		tempoutput.push_back(std::vector<int>(0));
-		for (int j = 0; j < U_PIX_NUM; j++)
-			tempoutput[i].push_back(-1);
-	}
-	*/
 	calcRangeTEMP(_model);
 
 	_actList = new ActiveList(this);
@@ -140,6 +132,11 @@ void PolyList::init()
 	//int id = 0;
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
+		if (id % 1000 == 0)
+		{
+			std::cout << "Initializing PolyList: "
+				<< float(id) / float(_model->_face.size())*100 << " %\n";
+		}
 		auto face = _model->_face[id];
 		if (abs(face._nml.dot(_cam->_w)) < 0.05)
 		{
@@ -183,36 +180,15 @@ void PolyList::init()
 			
 			if (!v.empty())
 			{
-				//if (v[0].y == v[1].y) continue;
 				_edge[v[0].y].push_back(
 					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id)
 				);
 				EdgeNum++;
 			}
 		}
-		//std::cout << "There are " << EdgeNum << " edges do not parallel to x-axis" << std::endl;
 	}
 	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
 	
-	/*
-	std::cout << "PolyList::init::_poly:\n";
-	for (int i = V_PIX_NUM - 1; i >= 0; i--)
-	{
-		for (auto j : _poly[i])
-		{
-			std::cout << i<<' '<<j->id << std::endl;;
-		}
-	}
-
-	std::cout << "PolyList::init::_edge:\n";
-	for (int i = V_PIX_NUM - 1; i >= 0; i--)
-	{
-		for (auto j : _edge[i])
-		{
-			std::cout << i << ' ' << j->id << std::endl;;
-		}
-	}
-	*/
 	/*
 	std::cout << "======================================================" << std::endl;
 	for (int i = V_PIX_NUM-1; i >= 0; i--)
