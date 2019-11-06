@@ -8,22 +8,22 @@ struct PolyListNode
 	vec3 nml;
 	int id;
 	int dy;
-	float z;
+	double z;
 	vec3 color;
-	PolyListNode(vec3 n, int i, int y, float Z)
+	PolyListNode(vec3 n, int i, int y, double Z)
 		:nml(n), id(i), dy(y), z(Z) {}
 };
 
 struct EdgeListNode
 {
-	float x;
-	float dx; // equals to (-1/k)
+	double x;
+	double dx; // equals to (-1/k)
 	int dy;
 	int id;
-	EdgeListNode(int X, float DX, int DY, int i)
-		:x(float(X)), dy(DY), id(i)
+	EdgeListNode(int X, double DX, int DY, int i)
+		:x(double(X)), dy(DY), id(i)
 	{
-		dx = -float(DX) / float(DY);
+		dx = -double(DX) / double(DY);
 	}
 };
 
@@ -79,8 +79,8 @@ private:
 	}
 	vec2if projectTEMP(Vertex& v);
 	void calcRangeTEMP(Model* model);
-	float _ltemp, _dtemp, _rtemp, _utemp;
-	float _scaleZ;
+	double _ltemp, _dtemp, _rtemp, _utemp;
+	double _scaleZ;
 
 	void calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v);
 		//p1 p2 may not in screen, 
@@ -119,7 +119,7 @@ public:
 
 	void delActiveP(int y);
 	void updataActiveE(int y);
-	void draw(int y, std::vector<float>& depth, std::vector<int>& buffer);
+	void draw(int y, std::vector<double>& depth, std::vector<int>& buffer);
 	void decDy();
 };
 

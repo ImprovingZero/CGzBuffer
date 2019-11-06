@@ -4,12 +4,12 @@
 #include<math.h>
 
 camera::camera(vec3 lookFrom, vec3 lookAt, vec3 up,
-	float alpha, float ratio, float focusDist)
+	double alpha, double ratio, double focusDist)
 	:_origin(lookFrom)
 {
-	float theta = alpha * float(M_PI) / 180.f;
-	float halfHeight = tan(theta / 2);
-	float halfWidth = ratio * halfHeight;
+	double theta = alpha * double(M_PI) / 180.f;
+	double halfHeight = tan(theta / 2);
+	double halfWidth = ratio * halfHeight;
 
 	_w = Unit(lookFrom - lookAt);
 	_u = Unit(Cross(up, _w));

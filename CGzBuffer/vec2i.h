@@ -23,14 +23,14 @@ public:
 	union {
 		struct {
 			int x, y;
-			float z;
+			double z;
 		};
 		struct {
 			int v[2];
-			float f;
+			double f;
 		};
 	};
 	vec2if() :x(0), y(0), z(0.f) {};
-	vec2if(const int a, const int b, const float c)
+	vec2if(const int a, const int b, const double c)
 		:x(a), y(b), z(c) {};
 };

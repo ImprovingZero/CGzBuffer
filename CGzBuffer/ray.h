@@ -13,6 +13,6 @@ public:
 	vec3 getOrigin() const { return _origin; }
 	vec3 getDirection() const { return _destination - _origin; }
 	vec3 getDestination() const { return _destination; }
-	vec3 pointAtParameter(float t) const { return _origin + t * getDirection(); };
+	vec3 pointAtParameter(double t) const { return _origin + t * getDirection(); };
 };
 

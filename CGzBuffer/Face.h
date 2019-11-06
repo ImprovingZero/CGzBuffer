@@ -28,7 +28,7 @@ public:
 		vec3 a = p[_vtx[1]._pos] - p[_vtx[0]._pos];
 		vec3 b = p[_vtx[2]._pos] - p[_vtx[1]._pos];
 		_nml = Unit(Cross(a, b));
-		float d = Dot(Unit(_nml), Unit(vec3(0.f, 0.f, 1.f)));
+		double d = Dot(Unit(_nml), Unit(vec3(0.f, 0.f, 1.f)));
 		if (d > -1e-6) _color = d * vec3(1.f, 1.f, 1.f);
 		else _color = -d * (vec3(0.f, 1.f, 1.f));
 	

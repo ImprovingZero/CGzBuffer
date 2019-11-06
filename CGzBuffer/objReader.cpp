@@ -12,21 +12,21 @@ void objReader::read(std::vector<Face>& face, std::vector<vec3>& pos, std::vecto
 		if (s[0] == '#') continue;
 		if (s == "v")
 		{
-			float x, y, z;
+			double x, y, z;
 			ss >> x >> y >> z;
 			pos.push_back(vec3(x, y, z));
 			continue;
 		}
 		if (s == "vn")
 		{
-			float x, y, z;
+			double x, y, z;
 			ss >> x >> y >> z;
 			nml.push_back(vec3(x, y, z));
 			continue;
 		}
 		if (s == "vt")
 		{
-			float x, y;
+			double x, y;
 			ss >> x >> y;
 			tex.push_back(vec2(x, y));
 			continue;

@@ -4,7 +4,7 @@ void ZBuffer::refreshLine()
 {
 	for (int i = 0; i < U_PIX_NUM; i++)
 	{
-		_depth[i] = -FLT_MAX;
+		_depth[i] = -DBL_MAX;
 		_buffer[i] = -1;
 	}
 }

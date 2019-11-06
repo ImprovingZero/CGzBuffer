@@ -2,7 +2,7 @@
 int delActivePolyNum = 0;
 int ActiveEdgeNum = 0;
 
-inline const int minInd(const float a, const float b, const float c)
+inline const int minInd(const double a, const double b, const double c)
 {
 	if (a < b && a < c) return 0;
 	else if (b < c) return 1;
@@ -23,9 +23,9 @@ vec2if PolyList::projectVertex(vec3 pos)
 	
 	vec3 vecP = pos - _cam->getLLC();
 	vec3 p = pos - _cam->_w * Dot(vecP, _cam->_w);
-	float x = (p.dot(_cam->_u) / _cam->getHorizontal().length()) * U_PIX_NUM;
-	float y = (p.dot(_cam->_v) / _cam->getVertical().length()) * V_PIX_NUM;
-	float z = p.dot(_cam->_v);
+	double x = (p.dot(_cam->_u) / _cam->getHorizontal().length()) * U_PIX_NUM;
+	double y = (p.dot(_cam->_v) / _cam->getVertical().length()) * V_PIX_NUM;
+	double z = p.dot(_cam->_v);
 	/*
 	std::cout << "PROJECT VERTEX: \n";
 	std::cout << pos.x() << ' ' << pos.y() << ' ' << pos.z() << std::endl;
@@ -40,9 +40,9 @@ vec2if PolyList::projectVertex(vec3 pos)
 
 vec2if PolyList::projectTEMP(Vertex& v)
 {
-	float x = _model->_pos[v._pos].x;
-	float y = _model->_pos[v._pos].y;
-	float z = _model->_pos[v._pos].z;
+	double x = _model->_pos[v._pos].x;
+	double y = _model->_pos[v._pos].y;
+	double z = _model->_pos[v._pos].z;
 	int x0, y0;
 	x0 = int((x - _ltemp) / (_rtemp - _ltemp) * U_PIX_NUM + 0.5f);
 	y0 = int((y - _dtemp) / (_utemp - _dtemp) * V_PIX_NUM + 0.5f);
@@ -54,10 +54,10 @@ vec2if PolyList::projectTEMP(Vertex& v)
 
 void PolyList::calcRangeTEMP(Model* model)
 {
-	_ltemp = FLT_MAX;
-	_rtemp = -FLT_MAX;
-	_utemp = -FLT_MAX;
-	_dtemp = FLT_MAX;
+	_ltemp = DBL_MAX;//FLT_MAX;
+	_rtemp = -DBL_MAX;//-FLT_MAX;
+	_utemp = -DBL_MAX;// FLT_MAX;
+	_dtemp = DBL_MAX;// FLT_MAX;
 	for (auto &b : model->_face)
 	{
 		for (int i = 0; i < 3; i++)
@@ -78,12 +78,12 @@ void PolyList::calcRangeTEMP(Model* model)
 		_dtemp = std::min(_dtemp, a.y);
 	}
 	*/
-	float u = _rtemp - _ltemp;
-	float v = _utemp - _dtemp;
-	float c_u = (_rtemp + _ltemp) / 2;
-	float c_v = (_utemp + _dtemp) / 2;
+	double u = _rtemp - _ltemp;
+	double v = _utemp - _dtemp;
+	double c_u = (_rtemp + _ltemp) / 2;
+	double c_v = (_utemp + _dtemp) / 2;
 	
-	const float ratio = float(U_PIX_NUM)/float(V_PIX_NUM);
+	const double ratio = double(U_PIX_NUM)/double(V_PIX_NUM);
 	if (u / v > ratio)
 	{
 		_utemp = c_v + u / ratio / 2;
@@ -94,8 +94,8 @@ void PolyList::calcRangeTEMP(Model* model)
 		_ltemp = c_u - v * ratio / 2;
 		_rtemp = c_u + v * ratio / 2;
 	}
-	_scaleZ = (_rtemp - _ltemp) / float(U_PIX_NUM);
-	//_scaleZ = (_utemp - _dtemp) / float(V_PIX_NUM);
+	_scaleZ = (_rtemp - _ltemp) / double(U_PIX_NUM);
+	//_scaleZ = (_utemp - _dtemp) / double(V_PIX_NUM);
 	//_scaleZ = 1.f;
 	//std::cout << _ltemp << ' ' << _rtemp << ' ' << _utemp << ' ' << _dtemp << std::endl;
 }
@@ -141,7 +141,7 @@ void PolyList::init()
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
 		auto face = _model->_face[id];
-		if (abs(face._nml.dot(_cam->_w)) < 1e-2)
+		if (abs(face._nml.dot(_cam->_w)) < 0.05)
 		{
 			paraCull++;
 			continue;
@@ -310,14 +310,14 @@ void ActiveList::updataActiveE(int y)
 	}
 }
 
-void ActiveList::draw(int y, std::vector<float>& depth, std::vector<int>& buffer)
+void ActiveList::draw(int y, std::vector<double>& depth, std::vector<int>& buffer)
 {
 	//std::cout << "ActiveList::Draw:: active poly num = " << _actpoly.size() << std::endl;
 	//std::cout << "ActiveList::Draw:: active edge num = " << _actedge.size() << std::endl;
 	for (auto e : _actedge)
 	{
 		//std::cout << e->id << std::endl;
-		float z = e->zl;
+		double z = e->zl;
 		//std::cout  << " --- z: " << z << ' ' << e->id << std::endl;
 		//std::cout << e->dxl << ' ' << e->dxr << std::endl;
 		for (int i = int(e->xl); i <= int(e->xr); i++)
