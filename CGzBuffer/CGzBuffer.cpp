@@ -41,7 +41,7 @@ void displayFnc() {
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
-	objReader fileReader("0000_00#1.obj");
+	objReader fileReader("2080_ob.obj");
 	
 	fileReader.read(model._face, model._pos, model._nml, model._tex);
 	

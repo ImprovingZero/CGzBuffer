@@ -2,6 +2,21 @@
 int delActivePolyNum = 0;
 int ActiveEdgeNum = 0;
 
+struct dzxy {
+	double dzx, dzy;
+	dzxy(vec3 nml, double sc, vec3 u, vec3 v, vec3 w)
+	{
+		double a = nml.dot(u);
+		double b = nml.dot(v);
+		double c = nml.dot(-w);
+		dzx = -a / c * sc;
+		dzy = b / c * sc;
+	}
+	dzxy() :dzx(0), dzy(0) {};
+};
+std::vector<dzxy> Dz(0);
+std::vector<bool> in(0);
+
 inline const int minInd(const double a, const double b, const double c)
 {
 	if (a < b && a < c) return 0;
@@ -63,10 +78,10 @@ void PolyList::calcRangeTEMP(Model* model)
 		for (int i = 0; i < 3; i++)
 		{
 			vec3 a = model->_pos[b._vtx[i]._pos];
-			_rtemp = std::max(_rtemp, a.x);
-			_ltemp = std::min(_ltemp, a.x);
-			_utemp = std::max(_utemp, a.y);
-			_dtemp = std::min(_dtemp, a.y);
+			_rtemp = (std::max)(_rtemp, a.x);
+			_ltemp = (std::min)(_ltemp, a.x);
+			_utemp = (std::max)(_utemp, a.y);
+			_dtemp = (std::min)(_dtemp, a.y);
 		}
 	}
 	/*/
@@ -130,6 +145,7 @@ void PolyList::init()
 	
 	int paraCull = 0;
 	//int id = 0;
+	std::cout << "Totol num of faces: " << _model->_face.size() << std::endl;
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
 		if (id % 1000 == 0)
@@ -138,6 +154,8 @@ void PolyList::init()
 				<< float(id) / float(_model->_face.size())*100 << " %\n";
 		}
 		auto face = _model->_face[id];
+		Dz.push_back(dzxy(face._nml, _scaleZ, _cam->_u, _cam->_v, _cam->_w));
+		in.push_back(0);
 		if (abs(face._nml.dot(_cam->_w)) < 0.05)
 		{
 			paraCull++;
@@ -164,11 +182,15 @@ void PolyList::init()
 		}
 		if (cutOff) continue;
 		*/
-		
+		//std::cout << "Face" << id << "  " << p[0].y
+		//	<< ' ' << p[1].y << ' ' << p[2].y << std::endl;
 		//Polygon List:
 		_poly[p[0].y].push_back(
 			new PolyListNode(face._nml, id, p[0].y - p[2].y, p[0].z)
 		);
+
+		//std::cout << "id: " << id << "  z: " << p[0].z << "  dzx: " << Dz[id].dzx 
+		//	<< "  dzy: " << Dz[id].dzy << std::endl;
 
 		int EdgeNum = 0;
 		//Edge List: MANY COMPLEX SITUATIONS CANNOT HANDLE
@@ -181,7 +203,7 @@ void PolyList::init()
 			if (!v.empty())
 			{
 				_edge[v[0].y].push_back(
-					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id)
+					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id, v[0].z)
 				);
 				EdgeNum++;
 			}
@@ -190,6 +212,12 @@ void PolyList::init()
 	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
 	
 	/*
+	for (int i = V_PIX_NUM - 1; i >= 0; i--)
+	{
+		if (!_poly[i].empty())
+			std::cout << i << ' ' << _poly[i].size() << std::endl;
+	}
+	system("pause");
 	std::cout << "======================================================" << std::endl;
 	for (int i = V_PIX_NUM-1; i >= 0; i--)
 	{
@@ -228,12 +256,37 @@ void PolyList::activeP(int y)
 	}
 }
 
+void PolyList::activePinter(int y)
+{
+	
+	for (auto a : _poly[y])
+	{
+		_actList->_actpoly.push_back(a);
+		std::vector<int> temp(2);
+		int id1 = -1, id2 = -1;
+		for (int i = 0; i < _edge[y].size(); i++)
+		{
+			if (_edge[y][i]->id == a->id && _edge[y][i]->dy != 0)
+			{
+				if (id1 == -1) id1 = i;
+				else { id2 = i; break; }
+			}
+		}
+		if (id1 == -1 || id2 == -1) continue;
+		_actList->_actedgeInter.push_back(_edge[y][id1]);
+		_actList->_actedgeInter.push_back(_edge[y][id2]);
+	}
+	//std::cout << y << ' ' << _poly[y].size()<<' '
+	//	<< _actList->_actedgeInter.size() << std::endl;
+}
+
 void ActiveList::delActiveP(int y)
 {
 	for (auto p = _actpoly.begin(); p != _actpoly.end(); )
 	{
 		if ((*p)->dy == 0)
 		{
+			//for naive scan Z buffer:
 			for (auto q = _actedge.begin(); q != _actedge.end();)
 			{
 				if ((*p)->id == (*q)->id)
@@ -242,9 +295,17 @@ void ActiveList::delActiveP(int y)
 				}
 				else q++;
 			}
+			//for interval scan Z buffer
+			for (auto q = _actedgeInter.begin(); q != _actedgeInter.end();)
+			{
+				if ((*p)->id == (*q)->id)
+				{
+					q = _actedgeInter.erase(q);
+				}
+				else q++;
+			}
 			p = _actpoly.erase(p);
 			delActivePolyNum++;
-
 		}
 		else p++;
 	}
@@ -296,8 +357,9 @@ void ActiveList::draw(int y, std::vector<double>& depth, std::vector<int>& buffe
 		double z = e->zl;
 		//std::cout  << " --- z: " << z << ' ' << e->id << std::endl;
 		//std::cout << e->dxl << ' ' << e->dxr << std::endl;
-		for (int i = int(e->xl); i <= int(e->xr); i++)
+		for (int i = int(e->xl); i <= int(e->xr)-1; i++)
 		{
+			//if (i >= U_PIX_NUM) break;
 			if (z > depth[i])
 			{
 				//std::cout << "**********draw: " <<i<< std::endl;
@@ -321,5 +383,156 @@ void ActiveList::decDy()
 	{
 		a->dyl--;
 		a->dyr--;
+	}
+}
+
+bool cmpInter(EdgeListNode* a, EdgeListNode* b)
+{
+	//if (a->x < b->x || (abs(a->x - b->x) < 1e-6 && Dz[a->id].dzx > Dz[b->id].dzx))return 1;
+	//else return 0;
+	return int(a->x) < int(b->x);
+}
+
+double sortUseTime = 0;
+void ActiveList::updateActiveEInter(int y)
+{
+	for (auto p = _actedgeInter.begin(); p != _actedgeInter.end(); p++)
+	{
+		auto& e = *p;
+		e->z += Dz[e->id].dzy;
+		e->z += Dz[e->id].dzx * e->dx;
+		e->x += e->dx;
+		if (e->dy == 0)
+		{
+			for (auto a : _polyList->_edge[y])
+			{
+				if (a->id == e->id)// && abs(e->dxl - a->x) < 1e-2)
+				{
+					*e = *a;
+				}
+			}
+		}
+	}
+	/*
+	LARGE_INTEGER nFreq;
+	LARGE_INTEGER nBeginTime;
+	LARGE_INTEGER nEndTime;
+
+	QueryPerformanceFrequency(&nFreq);//获取系统时钟频率
+	QueryPerformanceCounter(&nBeginTime);//获取开始时刻计数值
+
+	
+	QueryPerformanceCounter(&nEndTime);//获取停止时刻计数值
+	sortUseTime += (double)(nEndTime.QuadPart - nBeginTime.QuadPart) / (double)nFreq.QuadPart;
+	*/
+	_actedgeInter.sort(cmpInter);
+	//std::sort(_actedgeInter.begin(), _actedgeInter.end(), cmpInter);
+}
+std::ofstream fout("debug.txt");
+void ActiveList::drawInter(int y, std::vector<double>& depth, std::vector<int>& buffer)
+{
+	//std::set<int> nowIn;
+	using namespace std;
+	for (int i = 0; i < in.size(); i++) in[i] = 0;
+	
+	int color = -1;
+	double z = -DBL_MAX;
+	
+	auto p = _actedgeInter.begin();
+	for (int i = 0; i < U_PIX_NUM; i++)
+	{
+		
+		while (p!=_actedgeInter.end() && int((*p)->x) == i)
+		{
+			
+			if (in[(*p)->id] == false)
+			{
+				in[(*p)->id] = true;
+				//nowIn.insert((*p)->id);
+				if (color == -1)
+				{
+					color = (*p)->id;
+					z = (*p)->z;
+				}
+				else
+				{//compare
+					if ((*p)->z + Dz[(*p)->id].dzx > z + Dz[color].dzx)
+					{
+						//std::cout << i << ":  change " << color << " to " << (*p)->id << std::endl;
+						z = (*p)->z;
+						color = (*p)->id;
+					}
+				}
+			}
+			else
+			{
+				in[(*p)->id] = false;
+				//fout << i << ":  Dead " << (*p)->id << endl;
+				//nowIn.erase(nowIn.find((*p)->id));
+				color = -1;
+				z = -DBL_MAX;
+
+				for (auto q = _actedgeInter.begin(); q != p; q++)
+				{
+					/*
+					if (y == 250)
+					{
+						//fout << "try: " << (*q)->id << std::endl;
+						fout << (*q)->z + Dz[(*q)->id].dzx * (i - int((*q)->x) + 1)
+							<< ' ' << z + Dz[color].dzx << endl;
+					}
+					*/
+					
+					if (in[(*q)->id] && (*q)->id != (*p)->id &&
+						(color == -1 ||
+						((*q)->z + Dz[(*q)->id].dzx * (i - int((*q)->x) + 1) > z + Dz[color].dzx)))
+					{
+						z = (*q)->z + Dz[(*q)->id].dzx * (i - int((*q)->x));
+						color = (*q)->id;
+						//if (y==250) fout << i << ":  Pick " << color << endl;
+					}
+				}
+				//if (y == 250 && color==-1) fout << i << ":  no Cover " << color << endl;
+			}
+			p++;
+		}
+		//if (y == 250 && color != -1) fout << i << ' ' << color << endl;
+		if (p == _actedgeInter.end())
+		{
+			buffer[i] = -1;
+			continue;
+		}
+		buffer[i] = color;
+		
+		
+		if (color != -1) z += Dz[color].dzx;
+	}
+	//if (y == 0) std::cout << sortUseTime*1000 << "ms"<<std::endl;
+	/*
+	for (auto& i : _actedgeInter)
+		std::cout << i->id << ' ' << i->x << ' ' << i->z << ' ' << i->dy
+		<< " dx: " << i->dx << " dzx: "<<Dz[i->id].dzx<<" dzy: "<<Dz[i->id].dzy<<std::endl;
+	for (int i = 0; i < U_PIX_NUM; i++)
+	{
+		if (buffer[i] == -1) std::cout << ' ';
+		else std::cout << char(buffer[i] + 'a');
+	}
+	std::cout << std::endl;
+
+	if (y == 118) system("pause");
+	*/
+	
+	//std::cout << delActivePolyNum << std::endl;
+}
+
+void ActiveList::decDyInter()
+{
+	for (auto& a : _actpoly)
+	{
+		a->dy--;
+	}
+	for (auto& a : _actedgeInter)
+	{
+		a->dy--;
 	}
 }

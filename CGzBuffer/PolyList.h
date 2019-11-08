@@ -11,17 +11,18 @@ struct PolyListNode
 	double z;
 	vec3 color;
 	PolyListNode(vec3 n, int i, int y, double Z)
-		:nml(n), id(i), dy(y), z(Z) {}
+		:nml(n), id(i), dy(y), z(Z){}
 };
 
 struct EdgeListNode
 {
 	double x;
 	double dx; // equals to (-1/k)
+	double z;
 	int dy;
 	int id;
-	EdgeListNode(int X, double DX, int DY, int i)
-		:x(double(X)), dy(DY), id(i)
+	EdgeListNode(int X, double DX, int DY, int i,double Z)
+		:x(double(X)), dy(DY), id(i), z(Z)
 	{
 		dx = -double(DX) / double(DY);
 	}
@@ -99,6 +100,7 @@ public:
 		:_model(mdl),_cam(cam) { }
 	void refreshList() { init(); }
 	void activeP(int i);
+	void activePinter(int i);
 	//void activeE(int i);
 };
 
@@ -109,19 +111,27 @@ class ActiveList
 public:
 	std::list<PolyListNode*> _actpoly;
 	std::list<ActiveEdgeNode*> _actedge;
+	std::list<EdgeListNode*> _actedgeInter;
 	PolyList* _polyList;
 
 	ActiveList(PolyList* plyList) :_polyList(plyList) 
 	{ 
 		_actpoly.clear(); 
 		_actedge.clear(); 
+		_actedgeInter.clear();
 	};
 
 	void delActiveP(int y);
 	void updataActiveE(int y);
 	void draw(int y, std::vector<double>& depth, std::vector<int>& buffer);
 	void decDy();
+
+	void updateActiveEInter(int y);
+	void drawInter(int y, std::vector<double>& depth,
+		std::vector<int>& buffer);
+	void decDyInter();
 };
+
 
 
 

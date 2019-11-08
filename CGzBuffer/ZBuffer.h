@@ -28,6 +28,7 @@ public:
 	};
 	void generate();
 	void scan(int y);
+	void scanInterval(int y);
 
 	void drawCharSrc();
 };
