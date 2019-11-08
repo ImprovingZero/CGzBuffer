@@ -93,17 +93,19 @@ void ZBuffer::scanInterval(int y)
 	clock_t end = clock();
 	activeTimeUse += (end - start);
 
+	//std::cout << "start updateActive" << std::endl;
+	start = clock();
+	act->updateActiveEInter(y);
+	end = clock();
+	updateTimeUse += (end - start);
+
 	//std::cout << "start delActiveP" << std::endl;
 	start = clock();
 	act->delActiveP(y);
 	end = clock();
 	deleteTimeUse += (end - start);
 
-	//std::cout << "start updateActive" << std::endl;
-	start = clock();
-	act->updateActiveEInter(y);
-	end = clock();
-	updateTimeUse += (end - start);
+	
 
 	//std::cout << act->_actedgeInter.size() << std::endl;
 	

@@ -295,6 +295,7 @@ void ActiveList::delActiveP(int y)
 				}
 				else q++;
 			}
+			/*
 			//for interval scan Z buffer
 			for (auto q = _actedgeInter.begin(); q != _actedgeInter.end();)
 			{
@@ -304,10 +305,19 @@ void ActiveList::delActiveP(int y)
 				}
 				else q++;
 			}
+			*/
 			p = _actpoly.erase(p);
 			delActivePolyNum++;
 		}
 		else p++;
+	}
+	for (auto q = _actedgeInter.begin(); q != _actedgeInter.end();)
+	{
+		if ((*q)->dy==0)
+		{
+			q = _actedgeInter.erase(q);
+		}
+		else q++;
 	}
 }
 
