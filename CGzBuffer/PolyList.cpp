@@ -84,15 +84,7 @@ void PolyList::calcRangeTEMP(Model* model)
 			_dtemp = (std::min)(_dtemp, a.y);
 		}
 	}
-	/*/
-	for (auto &a: model->_pos)
-	{
-		_rtemp = std::max(_rtemp, a.x);
-		_ltemp = std::min(_ltemp, a.x);
-		_utemp = std::max(_utemp, a.y);
-		_dtemp = std::min(_dtemp, a.y);
-	}
-	*/
+	
 	double u = _rtemp - _ltemp;
 	double v = _utemp - _dtemp;
 	double c_u = (_rtemp + _ltemp) / 2;
@@ -130,7 +122,7 @@ void PolyList::calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v)
 
 //std::vector<std::vector<int>> tempoutput(0);
 
-void PolyList::init()
+void PolyList::initScan()
 {
 	calcRangeTEMP(_model);
 
@@ -144,7 +136,6 @@ void PolyList::init()
 	}
 	
 	int paraCull = 0;
-	//int id = 0;
 	std::cout << "Totol num of faces: " << _model->_face.size() << std::endl;
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
@@ -182,21 +173,15 @@ void PolyList::init()
 		}
 		if (cutOff) continue;
 		*/
-		//std::cout << "Face" << id << "  " << p[0].y
-		//	<< ' ' << p[1].y << ' ' << p[2].y << std::endl;
 		//Polygon List:
 		_poly[p[0].y].push_back(
 			new PolyListNode(face._nml, id, p[0].y - p[2].y, p[0].z)
 		);
 
-		//std::cout << "id: " << id << "  z: " << p[0].z << "  dzx: " << Dz[id].dzx 
-		//	<< "  dzy: " << Dz[id].dzy << std::endl;
-
 		int EdgeNum = 0;
 		//Edge List: MANY COMPLEX SITUATIONS CANNOT HANDLE
 		for (int i = 0; i < 3; i++)
 		{
-			//tempoutput[p[i].y][p[i].x] = id;
 			std::vector<vec2if> v(0);
 			calcCut(p[i], p[(i + 1) % 3], v);
 			
@@ -230,6 +215,89 @@ void PolyList::init()
 	}
 	std::cout << "======================================================" << std::endl;
 	*/
+}
+
+void PolyList::initNaive()
+{
+	calcRangeTEMP(_model);
+	int c1 = 0, c2 = 0, c3 = 0;
+	_actList = new ActiveList(this);
+	_poly.clear();
+	_edge.clear();
+	_poly.push_back(std::vector<PolyListNode*>(0));
+	_edge.push_back(std::vector<EdgeListNode*>(0));
+	int paraCull = 0;
+	std::cout << "Totol num of faces: " << _model->_face.size() << std::endl;
+
+	for (int id = 0; id < _model->_face.size(); id++)
+	{
+		if (id % 1000 == 0)
+		{
+			std::cout << "Initializing: "
+				<< float(id) / float(_model->_face.size()) * 100 << " %\n";
+		}
+		//std::cout << id << std::endl;
+		auto face = _model->_face[id];
+		Dz.push_back(dzxy(face._nml, _scaleZ, _cam->_u, _cam->_v, _cam->_w));
+
+		if (abs(face._nml.dot(_cam->_w)) < 0.05)
+		{
+			paraCull++;
+			continue;
+		}
+		std::vector<vec2if> p(0);
+
+		for (int i = 0; i < 3; i++)
+		{
+			p.push_back(projectTEMP(face._vtx[i]));
+			//p.push_back(projectVertex(face._vtx[i]));
+		}
+		sortTriVec2(p);
+		//Polygon List:
+		_poly[0].push_back(
+			new PolyListNode(face._nml, id, p[0].y - p[2].y, p[0].z)
+		);
+		_polyY.push_back(p[0].y);
+
+		//Edge List: MANY COMPLEX SITUATIONS CANNOT HANDLE
+		std::vector<int> tempY(0);
+		for (int i = 0; i < 3; i++)
+		{
+			std::vector<vec2if> v(0);
+			calcCut(p[i], p[(i + 1) % 3], v);
+
+			if (!v.empty())
+			{
+				_edge[0].push_back(
+					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id, v[0].z)
+				);
+				tempY.push_back(v[0].y);
+			}
+			else
+			{
+				tempY.push_back(0);
+				_edge[0].push_back(nullptr);
+			}
+		}
+		
+		int l = _edge[0].size();
+		//std::cout << l<<' '<<l-3 << std::endl;
+		
+		if (_edge[0][l - 3] == nullptr || tempY[0] < tempY[1])
+			std::swap(_edge[0][l - 3], _edge[0][l - 2]);
+		if (_edge[0][l - 3] == nullptr || tempY[0] < tempY[2]) 
+			std::swap(_edge[0][l - 3], _edge[0][l - 1]);
+		if (_edge[0][l - 2] == nullptr || tempY[1] < tempY[2])
+			std::swap(_edge[0][l - 2], _edge[0][l - 1]);
+		//if (_edge[0][l - 3] == nullptr) c1++;
+		//if (_edge[0][l - 2] == nullptr) c2++;
+		//if (_edge[0][l - 1] == nullptr) c3++;
+		
+		//std::cout << "dead" << std::endl;
+	}
+	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
+	//std::cout << c1 << ' ' << c2 << ' ' << c3 << std::endl;
+
 }
 
 
@@ -278,6 +346,103 @@ void PolyList::activePinter(int y)
 	}
 	//std::cout << y << ' ' << _poly[y].size()<<' '
 	//	<< _actList->_actedgeInter.size() << std::endl;
+}
+
+void PolyList::rastrizeTri(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth)
+{
+	std::cout << _poly[0].size() << ' ' << _edge[0].size() << std::endl;
+	for (int i = 0; i < _poly[0].size(); i++)
+	{
+		//if (i % 1000 == 0)
+		//	std::cout << "Finish " << double(i) / _poly[0].size() * 100 << "%" << std::endl;
+		//std::cout << i << std::endl;
+		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
+			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
+		//std::cout << "done" << std::endl;
+	}
+	/*
+	using namespace std;
+	for (int i=0;i<_poly[0].size();i++)
+	{
+		PolyListNode* poly = _poly[0][i];
+		EdgeListNode* el = _edge[0][i * 3 + 0];
+		EdgeListNode* er = _edge[0][i * 3 + 1];
+		cout << el->x << ' ' << er->x << ' ' << _edge[0][i * 3 + 2]->x << endl;
+		int y = _polyY[i];
+		while (poly->dy > 0)
+		{
+			if (el->dy == 0)
+			{
+				el = _edge[0][i * 3 + 2];
+			}
+			if (er->dy == 0)
+			{
+				er = _edge[0][i * 3 + 2];
+			}
+			if (el->x > er->x) std::swap(el, er);
+
+			double z = el->z;
+			for (int j = int(el->x); j<int(er->x); j++)
+			{
+				if (z > depth[y][j])
+				{
+					depth[y][j] = z;
+					output[y][j] = poly->id;
+				}
+				z += Dz[poly->id].dzx;
+			}
+			el->x += el->dx;
+			er->x += er->dx;
+			el->z += Dz[poly->id].dzy;
+			el->z += Dz[poly->id].dzx * el->dx;
+			el->dy--;
+			er->dy--;
+			poly->dy--;
+			y--;
+		}
+	}
+ */
+}
+
+void PolyList::rastrizeOneTri(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth, int y,
+	PolyListNode* poly, EdgeListNode* e1, EdgeListNode* e2, EdgeListNode* e3)
+{
+	using namespace std;
+
+	EdgeListNode* el = e1;
+	EdgeListNode* er = e2;
+	while (poly->dy > 0)
+	{
+		if (el->dy == 0)
+		{
+			el = e3;
+		}
+		if (er->dy == 0)
+		{
+			er = e3;
+		}
+		if (el->x > er->x) std::swap(el, er);
+
+		double z = el->z;
+		for (int j = int(el->x); j<int(er->x); j++)
+		{
+			if (z > depth[y][j])
+			{
+				depth[y][j] = z;
+				output[y][j] = poly->id;
+			}
+			z += Dz[poly->id].dzx;
+		}
+		el->x += el->dx;
+		er->x += er->dx;
+		el->z += Dz[poly->id].dzy;
+		el->z += Dz[poly->id].dzx * el->dx;
+		el->dy--;
+		er->dy--;
+		poly->dy--;
+		y--;
+	}
 }
 
 void ActiveList::delActiveP(int y)
@@ -442,7 +607,12 @@ std::ofstream fout("debug.txt");
 void ActiveList::drawInter(int y, std::vector<double>& depth, std::vector<int>& buffer)
 {
 	//std::set<int> nowIn;
-	using namespace std;
+	std::map<int, EdgeListNode*> m;
+	m.clear();
+	std::stack<EdgeListNode*> st;
+	std::set<EdgeListNode*> edgeIn;
+	edgeIn.clear();
+	EdgeListNode* nowe = NULL;
 	for (int i = 0; i < in.size(); i++) in[i] = 0;
 	
 	int color = -1;
@@ -451,14 +621,12 @@ void ActiveList::drawInter(int y, std::vector<double>& depth, std::vector<int>& 
 	auto p = _actedgeInter.begin();
 	for (int i = 0; i < U_PIX_NUM; i++)
 	{
-		
 		while (p!=_actedgeInter.end() && int((*p)->x) == i)
 		{
-			
 			if (in[(*p)->id] == false)
 			{
 				in[(*p)->id] = true;
-				//nowIn.insert((*p)->id);
+				edgeIn.insert(*p);
 				if (color == -1)
 				{
 					color = (*p)->id;
@@ -477,36 +645,25 @@ void ActiveList::drawInter(int y, std::vector<double>& depth, std::vector<int>& 
 			else
 			{
 				in[(*p)->id] = false;
-				//fout << i << ":  Dead " << (*p)->id << endl;
-				//nowIn.erase(nowIn.find((*p)->id));
+				edgeIn.erase(*p);
 				color = -1;
 				z = -DBL_MAX;
-
-				for (auto q = _actedgeInter.begin(); q != p; q++)
+				
+				//for (auto q = _actedgeInter.begin(); q != p; q++)
+				for (auto q=edgeIn.begin();q!=edgeIn.end();q++)
 				{
-					/*
-					if (y == 250)
-					{
-						//fout << "try: " << (*q)->id << std::endl;
-						fout << (*q)->z + Dz[(*q)->id].dzx * (i - int((*q)->x) + 1)
-							<< ' ' << z + Dz[color].dzx << endl;
-					}
-					*/
-					
 					if (in[(*q)->id] && (*q)->id != (*p)->id &&
 						(color == -1 ||
 						((*q)->z + Dz[(*q)->id].dzx * (i - int((*q)->x) + 1) > z + Dz[color].dzx)))
 					{
 						z = (*q)->z + Dz[(*q)->id].dzx * (i - int((*q)->x));
 						color = (*q)->id;
-						//if (y==250) fout << i << ":  Pick " << color << endl;
 					}
 				}
-				//if (y == 250 && color==-1) fout << i << ":  no Cover " << color << endl;
+				
 			}
 			p++;
 		}
-		//if (y == 250 && color != -1) fout << i << ' ' << color << endl;
 		if (p == _actedgeInter.end())
 		{
 			buffer[i] = -1;

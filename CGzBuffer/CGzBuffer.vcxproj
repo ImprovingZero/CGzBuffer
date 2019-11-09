@@ -160,6 +160,7 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="objReader.cpp" />
     <ClCompile Include="PolyList.cpp" />
+    <ClCompile Include="Qtree.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="ZBuffer.cpp" />
   </ItemGroup>
@@ -170,6 +171,7 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="objReader.h" />
     <ClInclude Include="PolyList.h" />
+    <ClInclude Include="Qtree.h" />
     <ClInclude Include="ray.h" />
     <ClInclude Include="vec2.h" />
     <ClInclude Include="vec2i.h" />

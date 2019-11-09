@@ -41,7 +41,7 @@ void displayFnc() {
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
-	objReader fileReader("2080_ob.obj");
+	objReader fileReader("0000_00#1.obj");
 	
 	fileReader.read(model._face, model._pos, model._nml, model._tex);
 	
@@ -52,7 +52,9 @@ int main(int argc, char* argv[])
 	PolyList pll(&model, &cam);
 
 	img = new ZBuffer(&pll);
-	img->generate();
+	img->generateNaive();
+	//img->generateScan();
+	//img->generateScanInter();
 	std::cout << cam._u << std::endl;
 	std::cout << cam._v << std::endl;
 	std::cout << cam._w << std::endl;

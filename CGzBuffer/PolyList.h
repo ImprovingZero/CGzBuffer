@@ -21,8 +21,8 @@ struct EdgeListNode
 	double z;
 	int dy;
 	int id;
-	EdgeListNode(int X, double DX, int DY, int i,double Z)
-		:x(double(X)), dy(DY), id(i), z(Z)
+	EdgeListNode(double X, double DX, int DY, int i,double Z)
+		:x(X), dy(DY), id(i), z(Z)
 	{
 		dx = -double(DX) / double(DY);
 	}
@@ -83,6 +83,8 @@ private:
 	double _ltemp, _dtemp, _rtemp, _utemp;
 	double _scaleZ;
 
+	void initScan();
+	void initNaive();
 	void calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v);
 		//p1 p2 may not in screen, 
 		//calc the ends that can represent this line on screen
@@ -91,17 +93,25 @@ private:
 public:
 	std::vector<std::vector<PolyListNode*>> _poly;
 	std::vector<std::vector<EdgeListNode*>> _edge;
+	std::vector<int> _polyY;
 	Model* _model;
 	ActiveList* _actList;
 	camera* _cam;
 
-	void init();
 	PolyList(Model* mdl, camera* cam) 
 		:_model(mdl),_cam(cam) { }
-	void refreshList() { init(); }
+
+	void refreshList() { initScan(); }
+	void refreshNaive() { initNaive(); }
 	void activeP(int i);
 	void activePinter(int i);
 	//void activeE(int i);
+	void rastrizeTri(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth);
+	void rastrizeOneTri(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, int y,
+		PolyListNode* poly,
+		EdgeListNode* e1, EdgeListNode* e2, EdgeListNode* e3);
 };
 
 class ZBuffer;
@@ -131,11 +141,3 @@ public:
 		std::vector<int>& buffer);
 	void decDyInter();
 };
-
-
-
-
-
-
-
-

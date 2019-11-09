@@ -8,6 +8,7 @@
 #include<string>
 #include<stack>
 #include<set>	
+#include<map>
 #include<iostream>
 #include<fstream>
 #include<float.h>
@@ -15,6 +16,6 @@
 #include<time.h>
 #include<Windows.h>
 
-#define U_PIX_NUM 600
-#define V_PIX_NUM 900
+#define U_PIX_NUM 500
+#define V_PIX_NUM 700
 

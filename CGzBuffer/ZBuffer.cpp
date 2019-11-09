@@ -22,7 +22,7 @@ double deleteTimeUse = 0;
 double updateTimeUse = 0;
 double drawTimeUse = 0;
 
-void ZBuffer::generate()
+void ZBuffer::generateScan()
 {
 	_pll->refreshList();
 	clock_t start = clock();
@@ -30,7 +30,28 @@ void ZBuffer::generate()
 	for (int i = V_PIX_NUM - 1; i >= 0; i--)
 	{
 		refreshLine();
-		//scan(i);
+		scan(i);
+		for (int j = 0; j < U_PIX_NUM; j++)
+		{
+			_output[i][j] = _buffer[j];
+		}
+	}
+	clock_t end = clock();
+	std::cout << "算法执行持续时间：" << end - start << "ms" << std::endl;
+	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
+	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
+	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
+	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
+}
+
+void ZBuffer::generateScanInter()
+{
+	_pll->refreshList();
+	clock_t start = clock();
+
+	for (int i = V_PIX_NUM - 1; i >= 0; i--)
+	{
+		refreshLine();
 		scanInterval(i);
 		for (int j = 0; j < U_PIX_NUM; j++)
 		{
@@ -43,8 +64,49 @@ void ZBuffer::generate()
 	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
 	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
 	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
-	//drawCharSrc();
-	//std::cout << "finish generate" << std::endl;
+
+}
+
+void ZBuffer::generateNaive()
+{
+	_pll->refreshNaive();
+	clock_t start = clock();
+
+	for (int i = 0; i <= V_PIX_NUM; i++)
+	{
+		_depthFull.push_back(std::vector<double>(0));
+		for (int j = 0; j <= U_PIX_NUM; j++)
+		{
+			_depthFull[i].push_back(-DBL_MAX);
+			_output[i][j] = -1;
+		}
+			
+	}
+	_pll->rastrizeTri(_output, _depthFull);
+
+	clock_t end = clock();
+	std::cout << "Generate with naive method --- Totol time use：" << end - start << "ms" << std::endl;
+}
+
+void ZBuffer::generateQtree()
+{
+	_pll->refreshNaive();
+	clock_t start = clock();
+
+	for (int i = 0; i <= V_PIX_NUM; i++)
+	{
+		_depthFull.push_back(std::vector<double>(0));
+		for (int j = 0; j <= U_PIX_NUM; j++)
+		{
+			_depthFull[i].push_back(-DBL_MAX);
+			_output[i][j] = -1;
+		}
+
+	}
+	_pll->rastrizeTri(_output, _depthFull);
+
+	clock_t end = clock();
+	std::cout << "Generate with QTree --- Totol time use：" << end - start << "ms" << std::endl;
 }
 
 void ZBuffer::scan(int y)
@@ -104,10 +166,6 @@ void ZBuffer::scanInterval(int y)
 	act->delActiveP(y);
 	end = clock();
 	deleteTimeUse += (end - start);
-
-	
-
-	//std::cout << act->_actedgeInter.size() << std::endl;
 	
 	//绘制
 	//std::cout << "start draw" << std::endl;
