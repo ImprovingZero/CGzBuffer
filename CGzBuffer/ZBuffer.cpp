@@ -59,7 +59,7 @@ void ZBuffer::generateScanInter()
 		}
 	}
 	clock_t end = clock();
-	std::cout << "算法执行持续时间：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with interval scan method --- Totol time use：" << end - start << "ms" << std::endl;
 	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
 	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
 	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
@@ -80,7 +80,6 @@ void ZBuffer::generateNaive()
 			_depthFull[i].push_back(-DBL_MAX);
 			_output[i][j] = -1;
 		}
-			
 	}
 	_pll->rastrizeTri(_output, _depthFull);
 
@@ -90,20 +89,27 @@ void ZBuffer::generateNaive()
 
 void ZBuffer::generateQtree()
 {
+	using namespace std;
 	_pll->refreshNaive();
+	cout << "start qtTree init" << endl;
+	_Qtree = new QtreeNode(U_PIX_NUM, V_PIX_NUM, vec2i(0, 0), nullptr);
+	
+	//_QtPtr.clear();
 	clock_t start = clock();
 
 	for (int i = 0; i <= V_PIX_NUM; i++)
 	{
 		_depthFull.push_back(std::vector<double>(0));
+		//_QtPtr.push_back(std::vector<QtreeNode*>(0));
 		for (int j = 0; j <= U_PIX_NUM; j++)
 		{
 			_depthFull[i].push_back(-DBL_MAX);
 			_output[i][j] = -1;
+			//_QtPtr[i].push_back(nullptr);
 		}
-
 	}
-	_pll->rastrizeTri(_output, _depthFull);
+	cout << "finish qtTree init" << endl;
+	_pll->rastrizeTriQtree(_output, _depthFull, _Qtree, _QtPtr);
 
 	clock_t end = clock();
 	std::cout << "Generate with QTree --- Totol time use：" << end - start << "ms" << std::endl;

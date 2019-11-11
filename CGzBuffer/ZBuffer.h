@@ -3,6 +3,9 @@
 #include"Model.h"
 #include"camera.h"
 #include"Polylist.h"
+#include"Qtree.h"
+
+class QtreeNode;
 
 class ZBuffer
 {
@@ -18,6 +21,8 @@ public:
 	std::vector<double> _depth;
 	std::vector<int> _buffer;
 	PolyList* _pll;
+	QtreeNode* _Qtree;
+	std::vector<std::vector<QtreeNode*>> _QtPtr;
 
 	ZBuffer(PolyList* pll) : _pll(pll) 
 	{

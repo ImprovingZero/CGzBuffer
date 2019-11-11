@@ -2,6 +2,7 @@
 #include"common.h"
 #include"Model.h"
 #include"camera.h"
+#include"Qtree.h"
 
 struct PolyListNode
 {
@@ -108,6 +109,9 @@ public:
 	//void activeE(int i);
 	void rastrizeTri(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth);
+	void rastrizeTriQtree(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, QtreeNode* qt,
+		std::vector<std::vector<QtreeNode*>>& QtPtr);
 	void rastrizeOneTri(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth, int y,
 		PolyListNode* poly,

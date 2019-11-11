@@ -52,9 +52,10 @@ int main(int argc, char* argv[])
 	PolyList pll(&model, &cam);
 
 	img = new ZBuffer(&pll);
-	img->generateNaive();
+	//img->generateQtree();
+	//img->generateNaive();
 	//img->generateScan();
-	//img->generateScanInter();
+	img->generateScanInter();
 	std::cout << cam._u << std::endl;
 	std::cout << cam._v << std::endl;
 	std::cout << cam._w << std::endl;

@@ -16,6 +16,11 @@ struct dzxy {
 };
 std::vector<dzxy> Dz(0);
 std::vector<bool> in(0);
+std::vector<double> TriClosest(0);
+std::vector<vec2i> AABBmin(0);
+std::vector<vec2i> AABBmax(0);
+std::vector<vec2i> update(0);
+std::vector<EdgeListNode*>edges(0);
 
 inline const int minInd(const double a, const double b, const double c)
 {
@@ -129,6 +134,7 @@ void PolyList::initScan()
 	_actList = new ActiveList(this);
 	_poly.clear();
 	_edge.clear();
+	edges.clear();
 	for (int i = 0; i < V_PIX_NUM; i++)
 	{
 		_poly.push_back(std::vector<PolyListNode*>(0));
@@ -147,6 +153,7 @@ void PolyList::initScan()
 		auto face = _model->_face[id];
 		Dz.push_back(dzxy(face._nml, _scaleZ, _cam->_u, _cam->_v, _cam->_w));
 		in.push_back(0);
+		for (int k = 0; k < 3; k++) edges.push_back(nullptr);
 		if (abs(face._nml.dot(_cam->_w)) < 0.05)
 		{
 			paraCull++;
@@ -190,31 +197,12 @@ void PolyList::initScan()
 				_edge[v[0].y].push_back(
 					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id, v[0].z)
 				);
+				edges[id * 3 + i] = _edge[v[0].y].back();
 				EdgeNum++;
 			}
 		}
 	}
 	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
-	
-	/*
-	for (int i = V_PIX_NUM - 1; i >= 0; i--)
-	{
-		if (!_poly[i].empty())
-			std::cout << i << ' ' << _poly[i].size() << std::endl;
-	}
-	system("pause");
-	std::cout << "======================================================" << std::endl;
-	for (int i = V_PIX_NUM-1; i >= 0; i--)
-	{
-		for (int j = 0; j < U_PIX_NUM; j++)
-		{
-			if (tempoutput[i][j] == -1) std::cout << ' ';
-			else std::cout << char(tempoutput[i][j] + 'a');
-		}
-		std::cout << std::endl;
-	}
-	std::cout << "======================================================" << std::endl;
-	*/
 }
 
 void PolyList::initNaive()
@@ -236,9 +224,12 @@ void PolyList::initNaive()
 			std::cout << "Initializing: "
 				<< float(id) / float(_model->_face.size()) * 100 << " %\n";
 		}
-		//std::cout << id << std::endl;
+
 		auto face = _model->_face[id];
 		Dz.push_back(dzxy(face._nml, _scaleZ, _cam->_u, _cam->_v, _cam->_w));
+		TriClosest.push_back(-DBL_MAX);
+		AABBmin.push_back(vec2i(INT_MAX, INT_MAX));
+		AABBmax.push_back(vec2i(-INT_MAX, -INT_MAX));
 
 		if (abs(face._nml.dot(_cam->_w)) < 0.05)
 		{
@@ -246,11 +237,15 @@ void PolyList::initNaive()
 			continue;
 		}
 		std::vector<vec2if> p(0);
-
 		for (int i = 0; i < 3; i++)
 		{
 			p.push_back(projectTEMP(face._vtx[i]));
 			//p.push_back(projectVertex(face._vtx[i]));
+			if (p[i].z > TriClosest[id]) TriClosest[id] = p[i].z;
+			if (p[i].x < AABBmin[id].x) AABBmin[id].x = p[i].x;
+			if (p[i].x > AABBmax[id].x) AABBmax[id].x = p[i].x;
+			if (p[i].y < AABBmin[id].y) AABBmin[id].y = p[i].y;
+			if (p[i].y > AABBmax[id].y) AABBmax[id].y = p[i].y;
 		}
 		sortTriVec2(p);
 		//Polygon List:
@@ -282,7 +277,7 @@ void PolyList::initNaive()
 		
 		int l = _edge[0].size();
 		//std::cout << l<<' '<<l-3 << std::endl;
-		
+
 		if (_edge[0][l - 3] == nullptr || tempY[0] < tempY[1])
 			std::swap(_edge[0][l - 3], _edge[0][l - 2]);
 		if (_edge[0][l - 3] == nullptr || tempY[0] < tempY[2]) 
@@ -350,15 +345,10 @@ void PolyList::activePinter(int y)
 
 void PolyList::rastrizeTri(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth)
 {
-	std::cout << _poly[0].size() << ' ' << _edge[0].size() << std::endl;
 	for (int i = 0; i < _poly[0].size(); i++)
 	{
-		//if (i % 1000 == 0)
-		//	std::cout << "Finish " << double(i) / _poly[0].size() * 100 << "%" << std::endl;
-		//std::cout << i << std::endl;
 		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
 			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
-		//std::cout << "done" << std::endl;
 	}
 	/*
 	using namespace std;
@@ -404,6 +394,29 @@ void PolyList::rastrizeTri(std::vector<std::vector<int>>& output, std::vector<st
  */
 }
 
+void PolyList::rastrizeTriQtree(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth, QtreeNode* qt,
+	std::vector<std::vector<QtreeNode*>>& QtPtr)
+{
+	//update.clear();
+	for (int i = 0; i < _poly[0].size(); i++)
+	{
+		//std::cout << i << std::endl;
+		//std::cout << AABBmin[i].x<<' '<<AABBmin[i].y<<' '
+		//	<<AABBmax[i].x<<' '<<AABBmax[i].y<<' '<<TriClosest[i] << std::endl;
+		int id = _poly[0][i]->id;
+		QtreeNode* test = qt->zTest(AABBmin[id], AABBmax[id], TriClosest[id]);
+		//std::cout << test << std::endl;
+		if (test == nullptr) std::cout << TriClosest[i] << std::endl;
+		if (test==nullptr) continue;
+		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
+			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
+		//test->update(depth);
+		//test->popup();
+		
+	}
+}
+
 void PolyList::rastrizeOneTri(std::vector<std::vector<int>>& output, 
 	std::vector<std::vector<double>>& depth, int y,
 	PolyListNode* poly, EdgeListNode* e1, EdgeListNode* e2, EdgeListNode* e3)
@@ -431,6 +444,7 @@ void PolyList::rastrizeOneTri(std::vector<std::vector<int>>& output,
 			{
 				depth[y][j] = z;
 				output[y][j] = poly->id;
+				update.push_back(vec2i(j, y));
 			}
 			z += Dz[poly->id].dzx;
 		}
