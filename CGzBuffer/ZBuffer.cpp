@@ -27,6 +27,16 @@ void ZBuffer::generateScan()
 	_pll->refreshList();
 	clock_t start = clock();
 	
+	for (int i = 0; i <= V_PIX_NUM; i++)
+	{
+		_depthFull.push_back(std::vector<double>(0));
+		for (int j = 0; j <= U_PIX_NUM; j++)
+		{
+			_depthFull[i].push_back(-DBL_MAX);
+			_output[i][j] = -1;
+		}
+	}
+
 	for (int i = V_PIX_NUM - 1; i >= 0; i--)
 	{
 		refreshLine();
@@ -37,11 +47,27 @@ void ZBuffer::generateScan()
 		}
 	}
 	clock_t end = clock();
-	std::cout << "算法执行持续时间：" << end - start << "ms" << std::endl;
-	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
-	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
-	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
-	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
+	std::cout << "Generate scan method --- Totol time use：" << end - start << "ms" << std::endl;	
+	_over = 1;
+}
+
+void ZBuffer::generateScanWithoutClassEdge()
+{
+	_pll->refreshList();
+	clock_t start = clock();
+
+	for (int i = V_PIX_NUM - 1; i >= 0; i--)
+	{
+		refreshLine();
+		scanWithoutClassifiedEdges(i);
+		for (int j = 0; j < U_PIX_NUM; j++)
+		{
+			_output[i][j] = _buffer[j];
+		}
+	}
+	clock_t end = clock();
+	std::cout << "Generate scan method without classified edges --- Totol time use：" << end - start << "ms" << std::endl;
+	_over = 1;
 }
 
 void ZBuffer::generateScanInter()
@@ -64,7 +90,7 @@ void ZBuffer::generateScanInter()
 	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
 	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
 	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
-
+	_over = 1;
 }
 
 void ZBuffer::generateNaive()
@@ -85,6 +111,7 @@ void ZBuffer::generateNaive()
 
 	clock_t end = clock();
 	std::cout << "Generate with naive method --- Totol time use：" << end - start << "ms" << std::endl;
+	_over = 1;
 }
 
 void ZBuffer::generateQtree()
@@ -113,6 +140,7 @@ void ZBuffer::generateQtree()
 
 	clock_t end = clock();
 	std::cout << "Generate with QTree --- Totol time use：" << end - start << "ms" << std::endl;
+	_over = 1;
 }
 
 void ZBuffer::scan(int y)
@@ -139,10 +167,6 @@ void ZBuffer::scan(int y)
 	//维护dy
 	act->decDy();
 	
-	
-	
-	//std::cout << "active Ply num: " << act->_actpoly.size() << " active edge num: "
-	//	<< act->_actedge.size() << std::endl;
 }
 
 void ZBuffer::scanInterval(int y)
@@ -187,6 +211,31 @@ void ZBuffer::scanInterval(int y)
 
 	//std::cout << "active Ply num: " << act->_actpoly.size() << " active edge num: "
 	//	<< act->_actedge.size() << std::endl;
+}
+
+void ZBuffer::scanWithoutClassifiedEdges(int y)
+{
+	//std::cout << "-------Scan: " << y << " ---------\n";
+	if (y % 100 == 0)
+	{
+		std::cout << "Scanning: " << float(V_PIX_NUM - y) / V_PIX_NUM * 100 << " %\n";
+	}
+	PolyList* cls = _pll;
+	ActiveList* act = _pll->_actList;
+	//维护：激活该线上的分类多边形； 到尾端的删掉/维护
+	//std::cout << "start ActiveP" << std::endl;
+	_pll->activePv2(y);
+	//std::cout << "start delActiveP" << std::endl;
+	act->delActiveP(y);
+	//std::cout << "start updateActive" << std::endl;
+	act->updateActiveEv2(y);
+
+	//绘制
+	//std::cout << "start draw" << std::endl;
+	act->drawv2(y, _depth, _buffer);
+
+	//维护dy
+	act->decDy();
 }
 
 void ZBuffer::drawCharSrc()

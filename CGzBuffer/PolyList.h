@@ -105,6 +105,7 @@ public:
 	void refreshList() { initScan(); }
 	void refreshNaive() { initNaive(); }
 	void activeP(int i);
+	void activePv2(int i);
 	void activePinter(int i);
 	//void activeE(int i);
 	void rastrizeTri(std::vector<std::vector<int>>& output,
@@ -125,6 +126,7 @@ class ActiveList
 public:
 	std::list<PolyListNode*> _actpoly;
 	std::list<ActiveEdgeNode*> _actedge;
+	std::list<std::vector<EdgeListNode*>> _actedgev2;
 	std::list<EdgeListNode*> _actedgeInter;
 	PolyList* _polyList;
 
@@ -133,11 +135,14 @@ public:
 		_actpoly.clear(); 
 		_actedge.clear(); 
 		_actedgeInter.clear();
+		_actedgev2.clear();
 	};
 
 	void delActiveP(int y);
 	void updataActiveE(int y);
+	void updateActiveEv2(int y);
 	void draw(int y, std::vector<double>& depth, std::vector<int>& buffer);
+	void drawv2(int y, std::vector<double>& depth, std::vector<int>& buffer);
 	void decDy();
 
 	void updateActiveEInter(int y);

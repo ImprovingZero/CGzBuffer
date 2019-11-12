@@ -16,5 +16,5 @@
 #include<time.h>
 #include<Windows.h>
 
-#define U_PIX_NUM 1000
-#define V_PIX_NUM 1400
+#define U_PIX_NUM 500
+#define V_PIX_NUM 700

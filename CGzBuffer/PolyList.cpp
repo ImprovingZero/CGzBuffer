@@ -129,6 +129,7 @@ void PolyList::calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v)
 
 void PolyList::initScan()
 {
+	std::ofstream fout("debug_initScan.txt");
 	calcRangeTEMP(_model);
 
 	_actList = new ActiveList(this);
@@ -145,6 +146,7 @@ void PolyList::initScan()
 	std::cout << "Totol num of faces: " << _model->_face.size() << std::endl;
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
+		fout << id << "-----"<< std::endl;
 		if (id % 1000 == 0)
 		{
 			std::cout << "Initializing PolyList: "
@@ -157,10 +159,11 @@ void PolyList::initScan()
 		if (abs(face._nml.dot(_cam->_w)) < 0.05)
 		{
 			paraCull++;
+			fout << "Continue" << std::endl;
 			continue;
 		}
 		std::vector<vec2if> p(0);
-		
+		fout << "P1" << ' ';
 		for (int i = 0; i < 3; i++)
 		{
 			p.push_back(projectTEMP(face._vtx[i]));
@@ -184,8 +187,9 @@ void PolyList::initScan()
 		_poly[p[0].y].push_back(
 			new PolyListNode(face._nml, id, p[0].y - p[2].y, p[0].z)
 		);
+		fout << "P2" << ' ';
 
-		int EdgeNum = 0;
+		std::vector<int> tempY(0);
 		//Edge List: MANY COMPLEX SITUATIONS CANNOT HANDLE
 		for (int i = 0; i < 3; i++)
 		{
@@ -198,9 +202,21 @@ void PolyList::initScan()
 					new EdgeListNode(v[0].x, v[0].x - v[1].x, v[0].y - v[1].y, id, v[0].z)
 				);
 				edges[id * 3 + i] = _edge[v[0].y].back();
-				EdgeNum++;
+				tempY.push_back(v[0].y);
+			}
+			else
+			{
+				tempY.push_back(0);
 			}
 		}
+		fout << "P3" << std::endl;
+		if (edges[id * 3 + 0] == nullptr || tempY[0] < tempY[1])
+			std::swap(edges[id * 3 + 0], edges[id * 3 + 1]);
+		if (edges[id * 3 + 0] == nullptr || tempY[0] < tempY[2])
+			std::swap(edges[id * 3 + 0], edges[id * 3 + 2]);
+		if (edges[id * 3 + 1] == nullptr || tempY[1] < tempY[2])
+			std::swap(edges[id * 3 + 1], edges[id * 3 + 2]);
+		fout << "finish" << std::endl;
 	}
 	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
 }
@@ -319,6 +335,22 @@ void PolyList::activeP(int y)
 	}
 }
 
+void PolyList::activePv2(int y)
+{
+	for (auto a : _poly[y])
+	{
+		_actList->_actpoly.push_back(a);
+		std::vector<EdgeListNode*> temp(0);
+		if (edges[a->id * 3 + 0] != nullptr && edges[a->id * 3 + 1] != nullptr)
+		{
+			temp.push_back(edges[a->id * 3 + 0]);
+			temp.push_back(edges[a->id * 3 + 1]);
+			_actList->_actedgev2.push_back(temp);
+		}
+		
+	}
+}
+
 void PolyList::activePinter(int y)
 {
 	
@@ -350,48 +382,6 @@ void PolyList::rastrizeTri(std::vector<std::vector<int>>& output, std::vector<st
 		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
 			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
 	}
-	/*
-	using namespace std;
-	for (int i=0;i<_poly[0].size();i++)
-	{
-		PolyListNode* poly = _poly[0][i];
-		EdgeListNode* el = _edge[0][i * 3 + 0];
-		EdgeListNode* er = _edge[0][i * 3 + 1];
-		cout << el->x << ' ' << er->x << ' ' << _edge[0][i * 3 + 2]->x << endl;
-		int y = _polyY[i];
-		while (poly->dy > 0)
-		{
-			if (el->dy == 0)
-			{
-				el = _edge[0][i * 3 + 2];
-			}
-			if (er->dy == 0)
-			{
-				er = _edge[0][i * 3 + 2];
-			}
-			if (el->x > er->x) std::swap(el, er);
-
-			double z = el->z;
-			for (int j = int(el->x); j<int(er->x); j++)
-			{
-				if (z > depth[y][j])
-				{
-					depth[y][j] = z;
-					output[y][j] = poly->id;
-				}
-				z += Dz[poly->id].dzx;
-			}
-			el->x += el->dx;
-			er->x += er->dx;
-			el->z += Dz[poly->id].dzy;
-			el->z += Dz[poly->id].dzx * el->dx;
-			el->dy--;
-			er->dy--;
-			poly->dy--;
-			y--;
-		}
-	}
- */
 }
 
 void PolyList::rastrizeTriQtree(std::vector<std::vector<int>>& output, 
@@ -399,22 +389,27 @@ void PolyList::rastrizeTriQtree(std::vector<std::vector<int>>& output,
 	std::vector<std::vector<QtreeNode*>>& QtPtr)
 {
 	//update.clear();
+	int skip = 0;
 	for (int i = 0; i < _poly[0].size(); i++)
 	{
-		//std::cout << i << std::endl;
-		//std::cout << AABBmin[i].x<<' '<<AABBmin[i].y<<' '
-		//	<<AABBmax[i].x<<' '<<AABBmax[i].y<<' '<<TriClosest[i] << std::endl;
 		int id = _poly[0][i]->id;
 		QtreeNode* test = qt->zTest(AABBmin[id], AABBmax[id], TriClosest[id]);
-		//std::cout << test << std::endl;
-		if (test == nullptr) std::cout << TriClosest[i] << std::endl;
-		if (test==nullptr) continue;
+		//if (test == nullptr) std::cout << TriClosest[i] << std::endl;
+		if (test == nullptr)
+		{
+			skip++;
+			continue;
+		}
 		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
 			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
+		
+		if (i % 10000 == 0) qt->update(depth);
 		//test->update(depth);
 		//test->popup();
 		
 	}
+	//qt->travelOutput(depth);
+	std::cout << skip << " faces have been culled by Q-Tree. How amazing!"<< std::endl;
 }
 
 void PolyList::rastrizeOneTri(std::vector<std::vector<int>>& output, 
@@ -490,6 +485,14 @@ void ActiveList::delActiveP(int y)
 		}
 		else p++;
 	}
+	for (auto p = _actedgev2.begin(); p != _actedgev2.end();)
+	{
+		if ((*p)[0]->dy == 0 && (*p)[1]->dy == 0)
+		{
+			p = _actedgev2.erase(p);
+		}
+		else p++;
+	}
 	for (auto q = _actedgeInter.begin(); q != _actedgeInter.end();)
 	{
 		if ((*q)->dy==0)
@@ -536,30 +539,52 @@ void ActiveList::updataActiveE(int y)
 	}
 }
 
+void ActiveList::updateActiveEv2(int y)
+{
+	for (auto p = _actedgev2.begin(); p != _actedgev2.end(); p++)
+	{
+		(*p)[0]->x += (*p)[0]->dx;
+		(*p)[1]->x += (*p)[1]->dx;
+		if ((*p)[0]->x > (*p)[1]->x) std::swap((*p)[0], (*p)[1]);
+		(*p)[0]->z += Dz[(*p)[0]->id].dzy;
+		(*p)[0]->z += Dz[(*p)[0]->id].dzx * (*p)[0]->dx;
+		if ((*p)[0]->dy == 0) (*p)[0] = edges[(*p)[0]->id * 3 + 2];
+		if ((*p)[1]->dy == 0) (*p)[1] = edges[(*p)[0]->id * 3 + 2];
+	}
+}
+
 void ActiveList::draw(int y, std::vector<double>& depth, std::vector<int>& buffer)
 {
-	//std::cout << "ActiveList::Draw:: active poly num = " << _actpoly.size() << std::endl;
-	//std::cout << "ActiveList::Draw:: active edge num = " << _actedge.size() << std::endl;
-	for (auto e : _actedge)
+	for (auto& e : _actedge)
 	{
-		//std::cout << e->id << std::endl;
 		double z = e->zl;
-		//std::cout  << " --- z: " << z << ' ' << e->id << std::endl;
-		//std::cout << e->dxl << ' ' << e->dxr << std::endl;
-		for (int i = int(e->xl); i <= int(e->xr)-1; i++)
+		for (int i = int(e->xl); i < int(e->xr); i++)
 		{
-			//if (i >= U_PIX_NUM) break;
 			if (z > depth[i])
 			{
-				//std::cout << "**********draw: " <<i<< std::endl;
 				depth[i] = z;
 				buffer[i] = e->id;
 			}
 			z += e->dzx;
 		}
 	}
-	
-	//std::cout << delActivePolyNum << std::endl;
+}
+
+void ActiveList::drawv2(int y, std::vector<double>& depth, std::vector<int>& buffer)
+{
+	for (auto p : _actedgev2)
+	{
+		double z = p[0]->z;
+		for (int i = int(p[0]->x); i<int(p[1]->x); i++)
+		{
+			if (z > depth[i])
+			{
+				depth[i] = z;
+				buffer[i] = p[0]->id;
+			}
+			z += Dz[p[0]->id].dzx;
+		}
+	}
 }
 
 void ActiveList::decDy()
@@ -573,12 +598,15 @@ void ActiveList::decDy()
 		a->dyl--;
 		a->dyr--;
 	}
+	for (auto& a : _actedgev2)
+	{
+		a[0]->dy--;
+		a[1]->dy--;
+	}
 }
 
 bool cmpInter(EdgeListNode* a, EdgeListNode* b)
 {
-	//if (a->x < b->x || (abs(a->x - b->x) < 1e-6 && Dz[a->id].dzx > Dz[b->id].dzx))return 1;
-	//else return 0;
 	return int(a->x) < int(b->x);
 }
 
@@ -607,11 +635,11 @@ void ActiveList::updateActiveEInter(int y)
 	LARGE_INTEGER nBeginTime;
 	LARGE_INTEGER nEndTime;
 
-	QueryPerformanceFrequency(&nFreq);//获取系统时钟频率
-	QueryPerformanceCounter(&nBeginTime);//获取开始时刻计数值
+	QueryPerformanceFrequency(&nFreq);
+	QueryPerformanceCounter(&nBeginTime);
 
 	
-	QueryPerformanceCounter(&nEndTime);//获取停止时刻计数值
+	QueryPerformanceCounter(&nEndTime);
 	sortUseTime += (double)(nEndTime.QuadPart - nBeginTime.QuadPart) / (double)nFreq.QuadPart;
 	*/
 	_actedgeInter.sort(cmpInter);
@@ -688,22 +716,6 @@ void ActiveList::drawInter(int y, std::vector<double>& depth, std::vector<int>& 
 		
 		if (color != -1) z += Dz[color].dzx;
 	}
-	//if (y == 0) std::cout << sortUseTime*1000 << "ms"<<std::endl;
-	/*
-	for (auto& i : _actedgeInter)
-		std::cout << i->id << ' ' << i->x << ' ' << i->z << ' ' << i->dy
-		<< " dx: " << i->dx << " dzx: "<<Dz[i->id].dzx<<" dzy: "<<Dz[i->id].dzy<<std::endl;
-	for (int i = 0; i < U_PIX_NUM; i++)
-	{
-		if (buffer[i] == -1) std::cout << ' ';
-		else std::cout << char(buffer[i] + 'a');
-	}
-	std::cout << std::endl;
-
-	if (y == 118) system("pause");
-	*/
-	
-	//std::cout << delActivePolyNum << std::endl;
 }
 
 void ActiveList::decDyInter()

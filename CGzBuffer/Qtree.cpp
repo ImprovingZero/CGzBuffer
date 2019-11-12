@@ -1,12 +1,8 @@
 #include "Qtree.h"
 
-
-using namespace std;
 QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f)
 	:_width(w),_height(h),_llc(llc),_fa(f),_z(-DBL_MAX)
 {
-	
-	
 	if (isLeaf())
 	{
 		for (int i = 0; i < 4; i++) _cld[i] = nullptr;
@@ -30,6 +26,9 @@ QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f)
 
 QtreeNode* QtreeNode::zTest(vec2i& Min, vec2i& Max, double z)
 {
+	using namespace std;
+	//cout << z << ' ' << getLeft() << ' ' << getRight() << ' ' << getUp() << ' ' << getDown() << endl;
+	if (z < _z) return nullptr;
 	if (isLeaf())
 	{
 		if (z > _z) return this;
@@ -45,8 +44,7 @@ QtreeNode* QtreeNode::zTest(vec2i& Min, vec2i& Max, double z)
 		return _cld[checkNum]->zTest(Min, Max, z);
 	}
 
-	if (z > _z) return this;
-	else return nullptr;
+	return this;
 }
 
 const double QtreeNode::update(std::vector<std::vector<double>>& depth)
@@ -59,6 +57,7 @@ const double QtreeNode::update(std::vector<std::vector<double>>& depth)
 			for (int j = getDown(); j <= getUp(); j++)
 				if (depth[j][i] < _z) _z = depth[j][i];
 		}
+		//std::cout << _z <<std::endl;
 		return _z;
 	}
 	else
@@ -84,5 +83,26 @@ void QtreeNode::popup() const
 			p = p->_fa;
 		}
 		else break;
+	}
+}
+int ddd = 0;
+void QtreeNode::travelOutput(std::vector<std::vector<double>>& depth) const
+{
+	ddd++;
+	//std::cout << _width << ' ' << _height << ' ' << isLeaf() << ' '<<_z<<std::endl;
+	if (isLeaf())
+	{
+		for (int i = getDown(); i <= getUp(); i++)
+		{
+			for (int j = getLeft(); j <= getRight(); j++)
+			{
+				depth[i][j] = _z;
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 4; i++)
+			_cld[i]->travelOutput(depth);
 	}
 }

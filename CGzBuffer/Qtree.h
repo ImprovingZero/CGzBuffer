@@ -31,18 +31,11 @@ public:
 	const double update(std::vector<std::vector<double>>& depth);
 	void popup() const;
 
+	void travelOutput(std::vector<std::vector<double>>& depth) const;
+
 	const bool isLeaf() const
 	{
 		return (_width < 32 || _height < 32);
 	}
-};
-
-class Qtree
-{
-public:
-	//ZBuffer* _zbuffer;
-	QtreeNode* _root;
-	int _width;
-	int _height;
 };
 

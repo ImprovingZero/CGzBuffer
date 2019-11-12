@@ -15,6 +15,7 @@ private:
 
 	void scan(int y);
 	void scanInterval(int y);
+	void scanWithoutClassifiedEdges(int y);
 public:
 	std::vector<std::vector<int>> _output;
 	std::vector<std::vector<double>> _depthFull;
@@ -23,9 +24,11 @@ public:
 	PolyList* _pll;
 	QtreeNode* _Qtree;
 	std::vector<std::vector<QtreeNode*>> _QtPtr;
+	bool _over;
 
 	ZBuffer(PolyList* pll) : _pll(pll) 
 	{
+		_over = 0;
 		_output.clear();
 		_depthFull.clear();
 		for (int i = 0; i <= V_PIX_NUM; i++)
@@ -37,6 +40,7 @@ public:
 		}
 	};
 	void generateScan();
+	void generateScanWithoutClassEdge();
 	void generateScanInter();
 	void generateNaive();
 	void generateQtree();

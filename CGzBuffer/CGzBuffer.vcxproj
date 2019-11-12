@@ -161,7 +161,6 @@
     <ClCompile Include="objReader.cpp" />
     <ClCompile Include="PolyList.cpp" />
     <ClCompile Include="Qtree.cpp" />
-    <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="ZBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
