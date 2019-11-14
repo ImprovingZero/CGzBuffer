@@ -13,6 +13,8 @@ public:
 	QtreeNode* _fa;
 
 	QtreeNode(int w, int h, vec2i llc, QtreeNode* f);
+	QtreeNode(int w, int h, vec2i llc, QtreeNode* f,
+		std::vector<std::vector<QtreeNode*>>& ptr);
 
 	const int getLeft() const { return _llc.x; }
 	const int getRight() const { return _llc.x + _width - 1; }

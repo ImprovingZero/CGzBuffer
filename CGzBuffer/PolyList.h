@@ -119,7 +119,8 @@ public:
 		std::vector<std::vector<double>>& depth, QtreeNode* qt,
 		std::vector<std::vector<QtreeNode*>>& QtPtr);
 	void rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
-		std::vector<std::vector<double>>& depth, QtreeNode* qt);
+		std::vector<std::vector<double>>& depth, QtreeNode* qt,
+		std::vector<std::vector<QtreeNode*>>& QtPtr);
 	void rastrizeOneTri(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth, int y,
 		PolyListNode* poly,

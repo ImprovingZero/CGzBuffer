@@ -46,6 +46,7 @@ void displayFnc() {
 			}
 			else
 			{
+				//double z = img->_QtPtr[j][i]->_fa->_z;
 				double z = img->_depthFull[j][i];
 				if (img->_output[j][i] != -DBL_MAX)
 					c = (z - minz) / (maxz - minz) * vec3(1.f, 1.f, 1.f);

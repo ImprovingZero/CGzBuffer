@@ -119,11 +119,8 @@ void ZBuffer::generateQtree()
 	using namespace std;
 	_pll->refreshNaive();
 	cout << "start qtTree init" << endl;
-	_Qtree = new QtreeNode(U_PIX_NUM, V_PIX_NUM, vec2i(0, 0), nullptr);
-	
-	//_QtPtr.clear();
-	clock_t start = clock();
 
+	_QtPtr.clear();
 	for (int i = 0; i <= V_PIX_NUM; i++)
 	{
 		_depthFull.push_back(std::vector<double>(0));
@@ -135,7 +132,22 @@ void ZBuffer::generateQtree()
 			_QtPtr[i].push_back(nullptr);
 		}
 	}
+	_Qtree = new QtreeNode(U_PIX_NUM, V_PIX_NUM, vec2i(0, 0), nullptr,_QtPtr);
+	
+	
+	for (int i=0;i<U_PIX_NUM;i++)
+		for (int j = 0; j < V_PIX_NUM; j++)
+		{
+			if (_QtPtr[j][i] == nullptr)
+			{
+				std::cout << "warnning!!" << std::endl;
+			}
+		}
+
+	
+	
 	cout << "finish qtTree init" << endl;
+	clock_t start = clock();
 	_pll->rastrizeTriQtree(_output, _depthFull, _Qtree, _QtPtr);
 
 	clock_t end = clock();
@@ -153,19 +165,22 @@ void ZBuffer::generateQtreeComplete()
 	for (int i = 0; i <= V_PIX_NUM; i++)
 	{
 		_depthFull.push_back(std::vector<double>(0));
+		_QtPtr.push_back(std::vector<QtreeNode*>(0));
 		for (int j = 0; j <= U_PIX_NUM; j++)
 		{
 			_depthFull[i].push_back(-DBL_MAX);
 			_output[i][j] = -1;
+			_QtPtr[i].push_back(nullptr);
+			
 		}
 	}
-	_Qtree = new QtreeNode(U_PIX_NUM, V_PIX_NUM, vec2i(0, 0), nullptr);
+	_Qtree = new QtreeNode(U_PIX_NUM, V_PIX_NUM, vec2i(0, 0), nullptr, _QtPtr);
 
 	cout << "finish qtTree init" << endl;
 	Octree* oct = _pll->_oct;
 
 	clock_t start = clock();
-	_pll->rastrizeTriQtreeComp(_output, _depthFull, _Qtree);
+	_pll->rastrizeTriQtreeComp(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
 
 	std::cout << "Generate with QTree Complete --- Totol time use£º" << end - start << "ms" << std::endl;

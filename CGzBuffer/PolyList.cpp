@@ -512,7 +512,16 @@ void PolyList::rastrizeTriQtree(std::vector<std::vector<int>>& output,
 		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
 			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
 		
-		if (i % (_poly[0].size()/40) == 0) qt->update(depth);
+		
+		for (auto& a : update)
+		{
+			//std::cout << "1" << std::endl;
+			QtPtr[a.y][a.x]->update(depth);
+			QtPtr[a.y][a.x]->popup();
+		}
+		
+		//if (_poly[0].size() < 40) continue;
+		//if (i % (_poly[0].size() / 40) == 0) qt->update(depth);
 		//test->update(depth);
 		//test->popup();
 		
@@ -521,12 +530,13 @@ void PolyList::rastrizeTriQtree(std::vector<std::vector<int>>& output,
 	std::cout << skip << " faces have been culled by Q-Tree. How amazing!"<< std::endl;
 }
 
-void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth, QtreeNode* qt)
+void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth, QtreeNode* qt,
+	std::vector<std::vector<QtreeNode*>>& QtPtr)
 {
 	int skip = 0;
 	auto oct = _oct->_octNode;
 	int numtry = 0;
-	int numdraw = 0;
 	std::deque<std::pair<OctreeNode*, QtreeNode*>> dq(0);
 	dq.push_back(std::make_pair(oct[0], qt));
 
@@ -550,13 +560,20 @@ void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output, std::
 			auto test1 = t4->zTest(AABB[id]._min, AABB[id]._max, TriClosest[id]);
 			if (test1 != nullptr)
 			{
-				numdraw++;
 				rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
 					_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
+				for (auto& a : update)
+				{
+					//std::cout << "1" << std::endl;
+					QtPtr[a.y][a.x]->update(depth);
+					QtPtr[a.y][a.x]->popup();
+				}
+				/*
 				if (numdraw % (_poly[0].size() / 40) == 0)
 				{
 					qt->update(depth);
 				}
+				*/
 				//test1->update(depth);
 				//test->popup();
 				

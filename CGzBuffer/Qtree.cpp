@@ -5,6 +5,7 @@ int numQtNode=0;
 QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f)
 	:_width(w),_height(h),_llc(llc),_fa(f),_z(-DBL_MAX)
 {
+	std::cout << "wrong enter" << std::endl;
 	if (isLeaf())
 	{
 		for (int i = 0; i < 4; i++) _cld[i] = nullptr;
@@ -20,6 +21,40 @@ QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f)
 		_cld[1] = new QtreeNode(w - midw, midh, vec2i(l + midw, d), this);
 		_cld[2] = new QtreeNode(midw, h - midh, vec2i(l, d + midh), this);
 		_cld[3] = new QtreeNode(w - midw, h - midh, vec2i(l + midw, d + midh), this);
+	}
+}
+
+QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f,
+	std::vector<std::vector<QtreeNode*>>& ptr)
+	:_width(w), _height(h), _llc(llc), _fa(f), _z(-DBL_MAX)
+{
+	//std::cout << "enter" << std::endl;
+	//std::cout << "w: " << w << " h: " << h << " llc: " << llc.x << ' ' << llc.y
+	//	<<std::endl;
+	if (isLeaf())
+	{
+		//std::cout << "is leaf" << std::endl;
+		for (int i = 0; i < 4; i++) _cld[i] = nullptr;
+		for (int i = getLeft(); i <= getRight(); i++)
+			for (int j = getDown(); j <= getUp(); j++)
+			{
+				//std::cout << j << ' ' << i << ' ' << this
+				//	<< std::endl;
+				ptr[j][i] = this;
+				//system("pause");
+			}
+	}
+	else
+	{
+		//std::cout << "make child" << std::endl;
+		int l = _llc.x;
+		int d = _llc.y;
+		int midw = _width / 2;
+		int midh = _height / 2;
+		_cld[0] = new QtreeNode(midw, midh, vec2i(l, d), this, ptr);
+		_cld[1] = new QtreeNode(w - midw, midh, vec2i(l + midw, d), this, ptr);
+		_cld[2] = new QtreeNode(midw, h - midh, vec2i(l, d + midh), this,ptr);
+		_cld[3] = new QtreeNode(w - midw, h - midh, vec2i(l + midw, d + midh), this, ptr);
 	}
 }
 
@@ -75,12 +110,20 @@ const double QtreeNode::update(std::vector<std::vector<double>>& depth)
 
 void QtreeNode::popup() const
 {
+	//double origin = _z;
 	QtreeNode* p = _fa;
 	while (p != nullptr)
 	{
-		if (_z < p->_z)
+		bool f = 1;
+		double Minz = DBL_MAX;
+		for (int i = 0; i < 4; i++)
 		{
-			p->_z = _z;
+			double tempz = p->_cld[i]->_z;
+			if (tempz < Minz) Minz = tempz;
+		}
+		if (Minz!=p->_z)
+		{
+			p->_z = Minz;
 			p = p->_fa;
 		}
 		else break;
