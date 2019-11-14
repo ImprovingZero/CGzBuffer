@@ -277,7 +277,42 @@ void ZBuffer::generateFineQtreev2()
 	clock_t start = clock();
 	_pll->rastrizeTriQtreeFinev2(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
-	std::cout << "Generate with QTree --- Totol time use£º" << end - start << "ms" << std::endl;
+	std::cout << "Generate with QTree (Fine version & draw visible pixels)--- Totol time use£º" << end - start << "ms" << std::endl;
+
+	_over = 1;
+	delete _Qtree;
+	_Qtree = nullptr;
+}
+
+void ZBuffer::generateFineQtreeCompv2()
+{
+	using namespace std;
+	_pll->refreshOctree();
+	cout << "start qtTree init" << endl;
+
+	_QtPtr.clear();
+	for (int i = 0; i <= V_PIX_NUM; i++)
+	{
+		_depthFull.push_back(std::vector<double>(0));
+		_QtPtr.push_back(std::vector<QtreeNode*>(0));
+		for (int j = 0; j <= U_PIX_NUM; j++)
+		{
+			_depthFull[i].push_back(-DBL_MAX);
+			_output[i][j] = -1;
+			_QtPtr[i].push_back(nullptr);
+
+		}
+	}
+	_Qtree = new QtreeNode(U_PIX_NUM, V_PIX_NUM, vec2i(0, 0), nullptr, _QtPtr);
+
+	cout << "finish qtTree init" << endl;
+	Octree* oct = _pll->_oct;
+
+	clock_t start = clock();
+	_pll->rastrizeTriQtreeCompFinev2(_output, _depthFull, _Qtree, _QtPtr);
+	clock_t end = clock();
+
+	std::cout << "Generate with QTree Complete (Fine version & draw visible pixels)--- Totol time use£º" << end - start << "ms" << std::endl;
 
 	_over = 1;
 	delete _Qtree;

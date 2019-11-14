@@ -46,8 +46,9 @@ public:
 	int _fa;
 	int _cld[8];
 	std::vector<int> _inc;
+	int _num;
 
-	OctreeNode(AABB2if& a, int fa = -1) :_fa(fa)
+	OctreeNode(AABB2if& a, int fa = -1) :_fa(fa), _num(0)
 	{
 		_inc.clear();
 		_corner = a._min;
@@ -83,7 +84,7 @@ public:
 	}
 	inline const bool isLeaf() const
 	{
-		return (_width < 4 || _height < 4);
+		return (_width < 32 || _height < 32);
 	}
 };
 

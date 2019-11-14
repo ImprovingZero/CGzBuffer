@@ -140,7 +140,7 @@ void PolyList::calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v)
 
 void PolyList::initScan()
 {
-	std::ofstream fout("debug_initScan.txt");
+	//std::ofstream fout("debug_initScan.txt");
 	calcRangeTEMP(_model);
 
 	clearGlobal();
@@ -158,7 +158,7 @@ void PolyList::initScan()
 	std::cout << "Totol num of faces: " << _model->_face.size() << std::endl;
 	for (int id = 0; id < _model->_face.size(); id++)
 	{
-		fout << id << "-----"<< std::endl;
+		//fout << id << "-----"<< std::endl;
 		if (id % 1000 == 0)
 		{
 			std::cout << "Initializing PolyList: "
@@ -171,11 +171,11 @@ void PolyList::initScan()
 		if (abs(face._nml.dot(_cam->_w)) < 0.01)
 		{
 			paraCull++;
-			fout << "Continue" << std::endl;
+			//fout << "Continue" << std::endl;
 			continue;
 		}
 		std::vector<vec2if> p(0);
-		fout << "P1" << ' ';
+		//fout << "P1" << ' ';
 		for (int i = 0; i < 3; i++)
 		{
 			p.push_back(projectTEMP(face._vtx[i]));
@@ -199,7 +199,7 @@ void PolyList::initScan()
 		_poly[p[0].y].push_back(
 			new PolyListNode(face._nml, id, p[0].y - p[2].y, p[0].z)
 		);
-		fout << "P2" << ' ';
+		//fout << "P2" << ' ';
 
 		std::vector<int> tempY(0);
 		//Edge List: MANY COMPLEX SITUATIONS CANNOT HANDLE
@@ -221,14 +221,14 @@ void PolyList::initScan()
 				tempY.push_back(0);
 			}
 		}
-		fout << "P3" << std::endl;
+		//fout << "P3" << std::endl;
 		if (edges[id * 3 + 0] == nullptr || tempY[0] < tempY[1])
 			std::swap(edges[id * 3 + 0], edges[id * 3 + 1]);
 		if (edges[id * 3 + 0] == nullptr || tempY[0] < tempY[2])
 			std::swap(edges[id * 3 + 0], edges[id * 3 + 2]);
 		if (edges[id * 3 + 1] == nullptr || tempY[1] < tempY[2])
 			std::swap(edges[id * 3 + 1], edges[id * 3 + 2]);
-		fout << "finish" << std::endl;
+		//fout << "finish" << std::endl;
 	}
 	std::cout << "There are " << paraCull << " triangles parallel to Cam direction been culled" << std::endl;
 }
@@ -347,7 +347,7 @@ void PolyList::initOctree()
 		TriClosest.push_back(-DBL_MAX);
 		AABB2if temp;
 		AABB.push_back(temp);
-		//octId.push_back(-1);
+		octId.push_back(-1);
 
 		if (abs(face._nml.dot(_cam->_w)) < 0.01)
 		{
@@ -361,11 +361,13 @@ void PolyList::initOctree()
 			//p.push_back(projectVertex(face._vtx[i]));
 			if (p[i].z > TriClosest[id]) TriClosest[id] = p[i].z;
 			AABB[id].add(p[i].x, p[i].y, p[i].z);
+			projects.push_back(vec2(p[i].x, p[i].y));
 		}
+		polyZ.push_back(p[0].z);
 		
-		octId.push_back(octId.size() - 1);
-		//octId.pop_back();
-		//octId.push_back(id);
+		//octId.push_back(octId.size() - 1);
+		octId.pop_back();
+		octId.push_back(_poly[0].size());
 		object.add(AABB[id]);
 		sortTriVec2(p);
 		//Polygon List:
@@ -410,22 +412,28 @@ void PolyList::initOctree()
 
 	std::cout << "Start building Oct-tree ...\n";
 	_oct = new Octree(object);
+	for (int i = 0; i < _poly[0].size(); i++)
+	{
+		_oct->putin(AABB[_poly[0][i]->id], i);
+	}
+	/*
 	for (auto id : octId)
 	{
 		//int id = _poly[0][i]->id;
 		if (id == -1) continue;
 		_oct->putin(AABB[_poly[0][id]->id], id);
 	}
-	/*
+	
+	*/
+	int numTri = 0;
+	int numc = 0;
 	for (int i = 0; i < _oct->_octNode.size(); i++)
 	{
-		auto temp = _oct->_octNode[i];
-
-		if (temp->_inc.size()!=0)
-			std::cout << "size: "<<temp->_width<<' '<<temp->_height<<' '<<temp->_depth
-				<<"   includeTriNum: "<<temp->_inc.size()<< std::endl;
+		numTri += _oct->_octNode[i]->_num;
+		numc += _oct->_octNode[i]->_inc.size();
 	}
-	*/
+	std::cout << "Totol num of triangles inside oct-Tree: "<<numTri <<' '<<numc<< std::endl;
+	
 	std::cout << "Finish building Oct-tree! HOW QUICKLY!\n";
 }
 
@@ -564,8 +572,18 @@ void zTestAndUpdate(std::vector<std::vector<int>>& output,
 	std::vector<std::vector<QtreeNode*>>& QtPtr)
 {
 	double z = TriClosest[id];
-	vec2i Min = AABBmin[id];
-	vec2i Max = AABBmax[id];
+	vec2i Min;
+	vec2i Max;
+	if (AABBmin.empty())
+	{
+		Min = vec2i(AABB[id]._min.x, AABB[id]._min.y);
+		Max = vec2i(AABB[id]._max.x, AABB[id]._max.y);
+	}
+	else
+	{
+		Max = AABBmax[id];
+		Min = AABBmin[id];
+	}
 	if (z < qt->_z) return;
 
 	std::deque<QtreeNode*> dq(0);
@@ -573,7 +591,6 @@ void zTestAndUpdate(std::vector<std::vector<int>>& output,
 	while (!dq.empty())
 	{
 		QtreeNode* h = dq.front();
-		//std::cout << h << std::endl;
 		dq.pop_front();
 		if (h->isLeaf())
 		{
@@ -585,7 +602,7 @@ void zTestAndUpdate(std::vector<std::vector<int>>& output,
 					if (isPointInTriangle(projects[pos * 3], projects[pos * 3 + 1],
 						projects[pos * 3 + 2], vec2(i, j)))
 					{
-						double d= polyZ[pos] + (projects[pos * 3].y - j) * Dz[id].dzy
+						double d = polyZ[pos] + (projects[pos * 3].y - j) * Dz[id].dzy
 							+ (i - projects[pos * 3].x) * Dz[id].dzx;
 						if (d > depth[j][i])
 						{
@@ -594,7 +611,6 @@ void zTestAndUpdate(std::vector<std::vector<int>>& output,
 							QtPtr[j][i]->update(depth);
 							QtPtr[j][i]->popup();
 						}
-						
 					}
 				}
 			}
@@ -663,13 +679,15 @@ void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
 	{
 		OctreeNode* t8 = dq.front().first;
 		QtreeNode* t4 = dq.front().second;
-		
 		dq.pop_front();
+
+		//if (t8->_num == 0) continue;
 		QtreeNode* test;
 		test = t4->zTest(t8->get2dMin(), t8->get2dMax(), t8->getNear());
 		if (test == nullptr)
 		{
-			numtry += t8->_inc.size();
+			//numtry += t8->_inc.size();
+			numtry += t8->_num;
 			continue;
 		}
 		for (auto i : t8->_inc)
@@ -683,7 +701,6 @@ void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
 					_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
 				for (auto& a : update)
 				{
-					//std::cout << "1" << std::endl;
 					QtPtr[a.y][a.x]->update(depth);
 					QtPtr[a.y][a.x]->popup();
 				}
@@ -692,15 +709,12 @@ void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
 				{
 					qt->update(depth);
 				}
-				*/
-				//test1->update(depth);
-				//test->popup();
-				
+				*/		
 			}
 			else numtry++;
 		}
 
-		if (!t8->isLeaf())
+		if (!t8->isLeaf() && t8->_cld[0]!=-1)
 		{
 			for (int j = 0; j < 8; j++)
 			{
@@ -744,7 +758,7 @@ void PolyList::rastrizeTriQtreeCompFine(std::vector<std::vector<int>>& output, s
 		test = t4->zTestFine(t8->get2dMin(), t8->get2dMax(), t8->getNear());
 		if (test == nullptr)
 		{
-			numtry += t8->_inc.size();
+			numtry += t8->_num;
 			continue;
 		}
 		for (auto i : t8->_inc)
@@ -765,7 +779,7 @@ void PolyList::rastrizeTriQtreeCompFine(std::vector<std::vector<int>>& output, s
 			else numtry++;
 		}
 
-		if (!t8->isLeaf())
+		if (!t8->isLeaf() && t8->_cld[0] != -1)
 		{
 			for (int j = 0; j < 8; j++)
 			{
@@ -790,8 +804,54 @@ void PolyList::rastrizeTriQtreeCompFine(std::vector<std::vector<int>>& output, s
 	std::cout << "Num culled faces: " << numtry << std::endl;
 }
 
-void PolyList::rastrizeTriQtreeCompFinev2(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth, QtreeNode* qt, std::vector<std::vector<QtreeNode*>>& QtPtr)
+void PolyList::rastrizeTriQtreeCompFinev2(std::vector<std::vector<int>>& output,
+	std::vector<std::vector<double>>& depth, 
+	QtreeNode* qt, std::vector<std::vector<QtreeNode*>>& QtPtr)
 {
+	auto oct = _oct->_octNode;
+	std::deque<std::pair<OctreeNode*, QtreeNode*>> dq(0);
+	dq.push_back(std::make_pair(oct[0], qt));
+
+	while (!dq.empty())
+	{
+		OctreeNode* t8 = dq.front().first;
+		QtreeNode* t4 = dq.front().second;
+		//std::cout << t8 << ' ' << t4 << std::endl;
+		dq.pop_front();
+		QtreeNode* test;
+		test = t4->zTest(t8->get2dMin(), t8->get2dMax(), t8->getNear());
+		if (test == nullptr)
+		{
+			continue;
+		}
+		for (auto i : t8->_inc)
+		{
+			int id = _poly[0][i]->id;
+			zTestAndUpdate(output, depth, i, id, t4, QtPtr);
+		}
+		//std::cout << "here--" << std::endl;
+		if (!t8->isLeaf() && t8->_cld[0] != -1)
+		{
+			for (int j = 0; j < 8; j++)
+			{
+				bool f = 0;
+				for (int i = 0; i < 4; i++)
+				{
+					vec2i Mintemp = oct[t8->_cld[j]]->get2dMin();
+					vec2i Maxtemp = oct[t8->_cld[j]]->get2dMax();
+					if (t4->_cld[i]->inside(Mintemp, Maxtemp))
+					{
+						dq.push_front(std::make_pair(oct[t8->_cld[j]], t4->_cld[i]));
+						f = 1; break;
+					}
+				}
+				if (!f)
+				{
+					dq.push_front(std::make_pair(oct[t8->_cld[j]], t4));
+				}
+			}
+		}
+	}
 }
 
 void PolyList::rastrizeOneTri(std::vector<std::vector<int>>& output, 

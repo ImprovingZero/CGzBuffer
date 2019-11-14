@@ -36,7 +36,7 @@ Octree::Octree(AABB2if& a)
 	for (int i = 0; i < 8; i++)
 	{
 		p->_cld[i] = _octNode.size();
-		_octNode.push_back(new OctreeNode(aabb[i], p));
+		_octNode.push_back(new OctreeNode(aabb[i], 0));
 	}
 
 }
@@ -47,8 +47,10 @@ void Octree::putin(AABB2if& a, int id)
 	//std::cout << "PUTIN::---\n" << a._min.x << ' ' << a._max.x << ' '
 	//	<< a._min.y << ' ' << a._max.y << ' ' << a._min.z << ' '<<a._max.z << std::endl;
 	//system("pause");
-	while (!p->isLeaf())
+	int h = 0;
+	while (!p->isLeaf() && p->_cld[0]!=-1)
 	{
+		p->_num++;
 		int findOut = -1;
 		for (int i = 0; i < 8; i++)
 		{
@@ -65,8 +67,37 @@ void Octree::putin(AABB2if& a, int id)
 			return;
 		}
 		p = _octNode[p->_cld[findOut]];
+		h = p->_cld[findOut];
 	}
-	p->_inc.push_back(id);
+	if (p->isLeaf()) p->_inc.push_back(id);
+	else
+	{
+		while (!p->isLeaf())
+		{
+			std::vector<AABB2if> aabb(0);
+			p->divide(aabb);
+
+			int findOut = -1;
+			for (int i = 0; i < 8; i++)
+			{
+				p->_cld[i] = _octNode.size();
+				_octNode.push_back(new OctreeNode(aabb[i], h));
+				if (_octNode[p->_cld[i]]->inside(a))
+				{
+					findOut = i;
+				}
+			}
+			if (findOut == -1)
+			{
+				p->_inc.push_back(id);
+				return;
+			}
+			p = _octNode[p->_cld[findOut]];
+			h = p->_cld[findOut];
+			p->_num++;
+		}
+		p->_inc.push_back(id);
+	}
 	
 }
 
