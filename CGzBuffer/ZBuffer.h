@@ -44,6 +44,8 @@ public:
 	void generateScanInter();
 	void generateNaive();
 	void generateQtree();
+	void generateQtreeComplete();
+	void generateFineQtree();
 	
 
 	void drawCharSrc();

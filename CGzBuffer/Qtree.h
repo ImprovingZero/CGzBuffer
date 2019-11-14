@@ -21,21 +21,22 @@ public:
 
 	inline const bool inside(vec2i& Min, vec2i& Max) const
 	{
-		if (Min.x > getLeft() && Max.x<getRight() &&
-			Min.y>getDown() && Max.y < getUp())
+		if (Min.x >= getLeft() && Max.x <= getRight() &&
+			Min.y >= getDown() && Max.y <= getUp())
 			return true;
 		else return false;
 	}
 
-	QtreeNode* zTest(vec2i& Min, vec2i& Max, double z);
+	QtreeNode* zTest(vec2i Min, vec2i Max, double z);
+	QtreeNode* zTest(vec2if& Min, vec2if& Max, double z);
 	const double update(std::vector<std::vector<double>>& depth);
 	void popup() const;
 
 	void travelOutput(std::vector<std::vector<double>>& depth) const;
 
-	const bool isLeaf() const
+	inline const bool isLeaf() const
 	{
-		return (_width < 32 || _height < 32);
+		return (_width < 2 || _height < 2);
 	}
 };
 

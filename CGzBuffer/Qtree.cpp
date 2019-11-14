@@ -1,5 +1,7 @@
 #include "Qtree.h"
 
+int numQtNode=0;
+
 QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f)
 	:_width(w),_height(h),_llc(llc),_fa(f),_z(-DBL_MAX)
 {
@@ -10,24 +12,19 @@ QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f)
 	else
 	{
 		//cout << w << ' ' << h << endl;
-		for (int i = 0; i < 4; i++)
-		{
-			int l = _llc.x;
-			int d = _llc.y;
-			int midw = _width / 2;
-			int midh = _height / 2;
-			_cld[0] = new QtreeNode(midw, midh, vec2i(l, d), this);
-			_cld[1] = new QtreeNode(w - midw, midh, vec2i(l + midw, d), this);
-			_cld[2] = new QtreeNode(midw, h - midh, vec2i(l, d + midh), this);
-			_cld[3] = new QtreeNode(w - midw, h - midh, vec2i(l + midw, d + midh), this);
-		}
+		int l = _llc.x;
+		int d = _llc.y;
+		int midw = _width / 2;
+		int midh = _height / 2;
+		_cld[0] = new QtreeNode(midw, midh, vec2i(l, d), this);
+		_cld[1] = new QtreeNode(w - midw, midh, vec2i(l + midw, d), this);
+		_cld[2] = new QtreeNode(midw, h - midh, vec2i(l, d + midh), this);
+		_cld[3] = new QtreeNode(w - midw, h - midh, vec2i(l + midw, d + midh), this);
 	}
 }
 
-QtreeNode* QtreeNode::zTest(vec2i& Min, vec2i& Max, double z)
+QtreeNode* QtreeNode::zTest(vec2i Min, vec2i Max, double z)
 {
-	using namespace std;
-	//cout << z << ' ' << getLeft() << ' ' << getRight() << ' ' << getUp() << ' ' << getDown() << endl;
 	if (z < _z) return nullptr;
 	if (isLeaf())
 	{
@@ -38,13 +35,17 @@ QtreeNode* QtreeNode::zTest(vec2i& Min, vec2i& Max, double z)
 	for (int i = 0; i < 4; i++)
 		if (_cld[i]->inside(Min, Max)) checkNum = i;
 
-	//std::cout << "checkNum: " << checkNum << std::endl;
 	if (checkNum != -1)
 	{
 		return _cld[checkNum]->zTest(Min, Max, z);
 	}
 
 	return this;
+}
+
+QtreeNode* QtreeNode::zTest(vec2if& Min, vec2if& Max, double z)
+{
+	return zTest(vec2i(Min.x, Min.y), vec2i(Max.x, Max.y), z);
 }
 
 const double QtreeNode::update(std::vector<std::vector<double>>& depth)

@@ -34,3 +34,19 @@ public:
 	vec2if(const int a, const int b, const double c)
 		:x(a), y(b), z(c) {};
 };
+
+class vec3i
+{
+public:
+	union {
+		struct {
+			int x, y, z;
+		};
+		struct {
+			int v[3];
+		};
+	};
+	vec3i() :x(0), y(0), z(0) {};
+	vec3i(const int a, const int b, const int c)
+		:x(a), y(b), z(c) {};
+};

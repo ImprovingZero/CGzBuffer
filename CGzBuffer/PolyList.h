@@ -3,6 +3,7 @@
 #include"Model.h"
 #include"camera.h"
 #include"Qtree.h"
+#include"Octree.h"
 
 struct PolyListNode
 {
@@ -65,6 +66,7 @@ struct ActiveEdgeNode
 };
 
 class ActiveList;
+class ZBuffer;
 
 class PolyList
 {
@@ -86,6 +88,7 @@ private:
 
 	void initScan();
 	void initNaive();
+	void initOctree();
 	void calcCut(vec2if p1, vec2if p2, std::vector<vec2if>& v);
 		//p1 p2 may not in screen, 
 		//calc the ends that can represent this line on screen
@@ -98,12 +101,14 @@ public:
 	Model* _model;
 	ActiveList* _actList;
 	camera* _cam;
+	Octree* _oct;
 
 	PolyList(Model* mdl, camera* cam) 
 		:_model(mdl),_cam(cam) { }
 
 	void refreshList() { initScan(); }
 	void refreshNaive() { initNaive(); }
+	void refreshOctree() { initOctree(); }
 	void activeP(int i);
 	void activePv2(int i);
 	void activePinter(int i);
@@ -113,13 +118,13 @@ public:
 	void rastrizeTriQtree(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth, QtreeNode* qt,
 		std::vector<std::vector<QtreeNode*>>& QtPtr);
+	void rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, QtreeNode* qt);
 	void rastrizeOneTri(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth, int y,
 		PolyListNode* poly,
 		EdgeListNode* e1, EdgeListNode* e2, EdgeListNode* e3);
 };
-
-class ZBuffer;
 
 class ActiveList
 {

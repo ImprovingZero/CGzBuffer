@@ -25,8 +25,8 @@ void displayFnc() {
 
 	double minz = DBL_MAX;
 	double maxz = -DBL_MAX;
-	for (int i = 0; i < U_PIX_NUM; i++)
-		for (int j = 0; j < V_PIX_NUM; j++)
+	for (int j = 0; j < img->_depthFull.size(); j++)
+		for (int i = 0; i < img->_depthFull[i].size(); i++)
 		{
 			if (img->_output[j][i] == -1) continue;
 			if (img->_depthFull[j][i] > maxz) maxz = img->_depthFull[j][i];
@@ -69,11 +69,12 @@ void KeyBoards(unsigned char key, int x, int y)
 void KeyBoardsUp(unsigned char key, int x, int y)
 {
 	if (key == 'd') depthMode = !depthMode;
-	else if (key == '1') img->generateNaive(); 
+	else if (key == '1') img->generateNaive();
 	else if (key == '2') img->generateQtree();
 	else if (key == '3') img->generateScan();
 	else if (key == '4') img->generateScanWithoutClassEdge();
 	else if (key == '5') img->generateScanInter();
+	else if (key == '6') img->generateQtreeComplete();
 	glutPostRedisplay();
 }
 
@@ -95,12 +96,15 @@ int main(int argc, char* argv[])
 	std::cout << cam._u << std::endl;
 	std::cout << cam._v << std::endl;
 	std::cout << cam._w << std::endl;
+
+	
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(U_PIX_NUM, V_PIX_NUM);
 	glutInitWindowPosition(200, 200);
 	glutCreateWindow("zbuffer");
 	myInit();
+	
 	glutKeyboardFunc(KeyBoards);
 	glutKeyboardUpFunc(KeyBoardsUp);
 	glutDisplayFunc(displayFnc);
