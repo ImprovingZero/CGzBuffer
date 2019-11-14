@@ -76,13 +76,21 @@ void KeyBoardsUp(unsigned char key, int x, int y)
 	else if (key == '4') img->generateScanWithoutClassEdge();
 	else if (key == '5') img->generateScanInter();
 	else if (key == '6') img->generateQtreeComplete();
+	else if (key == 'q') img->generateFineQtree();
+	else if (key == 'w') img->generateFineQtreeComp();
+	else if (key == 'e') img->generateFineQtreev2();
+	//else if (key == 'r') img->generateFineQtreeCompv2();
 	glutPostRedisplay();
 }
 
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
-	objReader fileReader("0000_00#1.obj");
+	//objReader fileReader("testcase.obj"); //box
+	//objReader fileReader("2080_ob.obj"); //body
+	objReader fileReader("0000_00#1.obj"); //cloth
+	
+
 	
 	fileReader.read(model._face, model._pos, model._nml, model._tex);
 	
@@ -94,9 +102,9 @@ int main(int argc, char* argv[])
 
 	img = new ZBuffer(&pll);
 	
-	std::cout << cam._u << std::endl;
-	std::cout << cam._v << std::endl;
-	std::cout << cam._w << std::endl;
+	//std::cout << cam._u << std::endl;
+	//std::cout << cam._v << std::endl;
+	//std::cout << cam._w << std::endl;
 
 	
 	glutInit(&argc, argv);

@@ -58,6 +58,14 @@ QtreeNode::QtreeNode(int w, int h, vec2i llc, QtreeNode* f,
 	}
 }
 
+QtreeNode::~QtreeNode()
+{
+	if (!isLeaf())
+	{
+		for (int i = 0; i < 4; i++) delete _cld[i];
+	}
+}
+
 QtreeNode* QtreeNode::zTest(vec2i Min, vec2i Max, double z)
 {
 	if (z < _z) return nullptr;
@@ -81,6 +89,28 @@ QtreeNode* QtreeNode::zTest(vec2i Min, vec2i Max, double z)
 QtreeNode* QtreeNode::zTest(vec2if& Min, vec2if& Max, double z)
 {
 	return zTest(vec2i(Min.x, Min.y), vec2i(Max.x, Max.y), z);
+}
+
+QtreeNode* QtreeNode::zTestFine(vec2i Min, vec2i Max, double z)
+{
+	if (z < _z) return nullptr;
+	std::deque<QtreeNode*> dq(0);
+	dq.push_back(this);
+	while (!dq.empty())
+	{
+		QtreeNode* h = dq.front();
+		dq.pop_front();
+		if (h->isLeaf()) return h;
+		for (int i = 0; i < 4; i++) 
+			if (h->_cld[i]->_z < z && h->overlap(Min,Max)) 
+				dq.push_back(h->_cld[i]);
+	}
+	return nullptr;
+}
+
+QtreeNode* QtreeNode::zTestFine(vec2if& Min, vec2if& Max, double z)
+{
+	return zTestFine(vec2i(Min.x, Min.y), vec2i(Max.x, Max.y), z);
 }
 
 const double QtreeNode::update(std::vector<std::vector<double>>& depth)

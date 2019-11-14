@@ -46,6 +46,9 @@ public:
 	void generateQtree();
 	void generateQtreeComplete();
 	void generateFineQtree();
+	void generateFineQtreeComp();
+	void generateFineQtreev2();
+	void generateFineQtreeCompv2();
 	
 
 	void drawCharSrc();

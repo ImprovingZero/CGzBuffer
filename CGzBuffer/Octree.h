@@ -83,7 +83,7 @@ public:
 	}
 	inline const bool isLeaf() const
 	{
-		return (_width < 32 || _height < 32);
+		return (_width < 4 || _height < 4);
 	}
 };
 

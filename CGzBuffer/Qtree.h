@@ -15,6 +15,7 @@ public:
 	QtreeNode(int w, int h, vec2i llc, QtreeNode* f);
 	QtreeNode(int w, int h, vec2i llc, QtreeNode* f,
 		std::vector<std::vector<QtreeNode*>>& ptr);
+	~QtreeNode();
 
 	const int getLeft() const { return _llc.x; }
 	const int getRight() const { return _llc.x + _width - 1; }
@@ -28,9 +29,18 @@ public:
 			return true;
 		else return false;
 	}
+	inline const bool overlap(vec2i& Min, vec2i& Max) const
+	{
+		if (Min.x > getRight() || Max.x<getLeft() ||
+			Min.y>getUp() || Max.y < getDown()) return false;
+		else return true;
+	}
 
 	QtreeNode* zTest(vec2i Min, vec2i Max, double z);
 	QtreeNode* zTest(vec2if& Min, vec2if& Max, double z);
+	QtreeNode* zTestFine(vec2i Min, vec2i Max, double z);
+	QtreeNode* zTestFine(vec2if& Min, vec2if& Max, double z);
+
 	const double update(std::vector<std::vector<double>>& depth);
 	void popup() const;
 

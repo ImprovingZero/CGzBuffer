@@ -1,5 +1,6 @@
 #include "Octree.h"
 
+/*
 Octree::Octree(AABB2if& a)
 {
 	//std::cout << "Octree::Octree---\n" << a._min.x << ' ' << a._max.x << ' '
@@ -20,6 +21,24 @@ Octree::Octree(AABB2if& a)
 			_octNode.push_back(new OctreeNode(aabb[i], h));
 		}
 	}
+}
+*/
+
+Octree::Octree(AABB2if& a)
+{
+	//std::cout << "Octree::Octree---\n" << a._min.x << ' ' << a._max.x << ' '
+	//		<< a._min.y << ' ' << a._max.y << std::endl;
+	_octNode.clear();
+	OctreeNode* p = new OctreeNode(a);
+	_octNode.push_back(p);
+	std::vector<AABB2if> aabb(0);
+	p->divide(aabb);
+	for (int i = 0; i < 8; i++)
+	{
+		p->_cld[i] = _octNode.size();
+		_octNode.push_back(new OctreeNode(aabb[i], p));
+	}
+
 }
 
 void Octree::putin(AABB2if& a, int id)

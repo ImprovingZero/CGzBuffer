@@ -22,6 +22,8 @@ std::vector<vec2i> AABBmax(0);
 std::vector<vec2i> update(0);
 std::vector<AABB2if> AABB(0);
 std::vector<EdgeListNode*>edges(0);
+std::vector<vec2> projects(0);
+std::vector<double> polyZ(0);
 std::vector<int> octId(0);
 
 inline const int minInd(const double a, const double b, const double c)
@@ -47,6 +49,8 @@ void clearGlobal()
 	Dz.clear();
 	in.clear();
 	octId.clear();
+	projects.clear();
+	polyZ.clear();
 }
 
 vec2if PolyList::projectVertex(vec3 pos)
@@ -270,7 +274,9 @@ void PolyList::initNaive()
 			if (p[i].x > AABBmax[id].x) AABBmax[id].x = p[i].x;
 			if (p[i].y < AABBmin[id].y) AABBmin[id].y = p[i].y;
 			if (p[i].y > AABBmax[id].y) AABBmax[id].y = p[i].y;
+			projects.push_back(vec2(p[i].x, p[i].y));
 		}
+		polyZ.push_back(p[0].z);
 		sortTriVec2(p);
 		//Polygon List:
 		_poly[0].push_back(
@@ -512,22 +518,135 @@ void PolyList::rastrizeTriQtree(std::vector<std::vector<int>>& output,
 		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
 			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
 		
-		
 		for (auto& a : update)
 		{
-			//std::cout << "1" << std::endl;
 			QtPtr[a.y][a.x]->update(depth);
 			QtPtr[a.y][a.x]->popup();
 		}
-		
-		//if (_poly[0].size() < 40) continue;
-		//if (i % (_poly[0].size() / 40) == 0) qt->update(depth);
-		//test->update(depth);
-		//test->popup();
-		
 	}
-	//qt->travelOutput(depth);
 	std::cout << skip << " faces have been culled by Q-Tree. How amazing!"<< std::endl;
+}
+
+bool isPointInTriangle(vec2 A, vec2 B, vec2 C, vec2 P)
+{
+	//THIS PART is COPIED from 
+	//https://www.cnblogs.com/graphics/archive/2010/08/05/1793393.html
+	vec2 v0 = C - A;
+	vec2 v1 = B - A;
+	vec2 v2 = P - A;
+
+	float dot00 = v0.dot(v0);
+	float dot01 = v0.dot(v1);
+	float dot02 = v0.dot(v2);
+	float dot11 = v1.dot(v1);
+	float dot12 = v1.dot(v2);
+
+	float inverDeno = 1 / (dot00 * dot11 - dot01 * dot01);
+
+	float u = (dot11 * dot02 - dot01 * dot12) * inverDeno;
+	if (u < 0 || u > 1) // if u out of range, return directly
+	{
+		return false;
+	}
+
+	float v = (dot00 * dot12 - dot01 * dot02) * inverDeno;
+	if (v < 0 || v > 1) // if v out of range, return directly
+	{
+		return false;
+	}
+
+	return u + v <= 1;
+}
+
+void zTestAndUpdate(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth,
+	int pos, int id, QtreeNode* qt,
+	std::vector<std::vector<QtreeNode*>>& QtPtr)
+{
+	double z = TriClosest[id];
+	vec2i Min = AABBmin[id];
+	vec2i Max = AABBmax[id];
+	if (z < qt->_z) return;
+
+	std::deque<QtreeNode*> dq(0);
+	dq.push_back(qt);
+	while (!dq.empty())
+	{
+		QtreeNode* h = dq.front();
+		//std::cout << h << std::endl;
+		dq.pop_front();
+		if (h->isLeaf())
+		{
+			
+			for (int i = h->getLeft(); i <= h->getRight(); i++)
+			{
+				for (int j = h->getDown(); j <= h->getUp(); j++)
+				{
+					if (isPointInTriangle(projects[pos * 3], projects[pos * 3 + 1],
+						projects[pos * 3 + 2], vec2(i, j)))
+					{
+						double d= polyZ[pos] + (projects[pos * 3].y - j) * Dz[id].dzy
+							+ (i - projects[pos * 3].x) * Dz[id].dzx;
+						if (d > depth[j][i])
+						{
+							output[j][i] = id;
+							depth[j][i] = d;
+							QtPtr[j][i]->update(depth);
+							QtPtr[j][i]->popup();
+						}
+						
+					}
+				}
+			}
+		 
+			continue;
+		}
+		for (int i = 0; i < 4; i++)
+			if (h->_cld[i]->_z < z && h->overlap(Min, Max))
+				dq.push_back(h->_cld[i]);
+	}
+	return;
+}
+
+void PolyList::rastrizeTriQtreeFine(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth, QtreeNode* qt, 
+	std::vector<std::vector<QtreeNode*>>& QtPtr)
+{
+	int skip = 0;
+	for (int i = 0; i < _poly[0].size(); i++)
+	{
+		int id = _poly[0][i]->id;
+		QtreeNode* test = qt->zTestFine(AABBmin[id], AABBmax[id], TriClosest[id]);
+		if (test == nullptr)
+		{
+			skip++;
+			continue;
+		}
+		rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
+			_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
+
+		for (auto& a : update)
+		{
+			QtPtr[a.y][a.x]->update(depth);
+			QtPtr[a.y][a.x]->popup();
+		}
+	}
+	std::cout << skip << " faces have been culled by Q-Tree(Fine version). How amazing!" << std::endl;
+}
+
+void PolyList::rastrizeTriQtreeFinev2(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth, 
+	QtreeNode* qt, std::vector<std::vector<QtreeNode*>>& QtPtr)
+{
+	//int skip = 0;
+	for (int i = 0; i < _poly[0].size(); i++)
+	{
+		int id = _poly[0][i]->id;
+		//std::cout << id << ' ' << std::endl;
+		zTestAndUpdate(output, depth, i, id, qt, QtPtr);
+	}
+	//std::cout << skip << " faces have been culled by Q-Tree(Fine version). How amazing!" << std::endl;
+
 }
 
 void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output, 
@@ -580,10 +699,6 @@ void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
 			}
 			else numtry++;
 		}
-		//std::cout << "here" << std::endl;
-		
-		//test->update(depth);
-		//test->popup();
 
 		if (!t8->isLeaf())
 		{
@@ -608,6 +723,75 @@ void PolyList::rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
 		}
 	}
 	std::cout << "Num culled faces: "<<numtry << std::endl;
+}
+
+
+void PolyList::rastrizeTriQtreeCompFine(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth, QtreeNode* qt, std::vector<std::vector<QtreeNode*>>& QtPtr)
+{
+	int skip = 0;
+	auto oct = _oct->_octNode;
+	int numtry = 0;
+	std::deque<std::pair<OctreeNode*, QtreeNode*>> dq(0);
+	dq.push_back(std::make_pair(oct[0], qt));
+
+	while (!dq.empty())
+	{
+		OctreeNode* t8 = dq.front().first;
+		QtreeNode* t4 = dq.front().second;
+
+		dq.pop_front();
+		QtreeNode* test;
+		test = t4->zTestFine(t8->get2dMin(), t8->get2dMax(), t8->getNear());
+		if (test == nullptr)
+		{
+			numtry += t8->_inc.size();
+			continue;
+		}
+		for (auto i : t8->_inc)
+		{
+			int id = _poly[0][i]->id;
+
+			auto test1 = t4->zTestFine(AABB[id]._min, AABB[id]._max, TriClosest[id]);
+			if (test1 != nullptr)
+			{
+				rastrizeOneTri(output, depth, _polyY[i], _poly[0][i],
+					_edge[0][i * 3 + 0], _edge[0][i * 3 + 1], _edge[0][i * 3 + 2]);
+				for (auto& a : update)
+				{
+					QtPtr[a.y][a.x]->update(depth);
+					QtPtr[a.y][a.x]->popup();
+				}
+			}
+			else numtry++;
+		}
+
+		if (!t8->isLeaf())
+		{
+			for (int j = 0; j < 8; j++)
+			{
+				bool f = 0;
+				for (int i = 0; i < 4; i++)
+				{
+					vec2i Mintemp = oct[t8->_cld[j]]->get2dMin();
+					vec2i Maxtemp = oct[t8->_cld[j]]->get2dMax();
+					if (t4->_cld[i]->inside(Mintemp, Maxtemp))
+					{
+						dq.push_front(std::make_pair(oct[t8->_cld[j]], t4->_cld[i]));
+						f = 1; break;
+					}
+				}
+				if (!f)
+				{
+					dq.push_front(std::make_pair(oct[t8->_cld[j]], t4));
+				}
+			}
+		}
+	}
+	std::cout << "Num culled faces: " << numtry << std::endl;
+}
+
+void PolyList::rastrizeTriQtreeCompFinev2(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth, QtreeNode* qt, std::vector<std::vector<QtreeNode*>>& QtPtr)
+{
 }
 
 void PolyList::rastrizeOneTri(std::vector<std::vector<int>>& output, 

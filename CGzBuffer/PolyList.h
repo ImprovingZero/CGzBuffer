@@ -118,7 +118,19 @@ public:
 	void rastrizeTriQtree(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth, QtreeNode* qt,
 		std::vector<std::vector<QtreeNode*>>& QtPtr);
+	void rastrizeTriQtreeFine(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, QtreeNode* qt,
+		std::vector<std::vector<QtreeNode*>>& QtPtr);
+	void rastrizeTriQtreeFinev2(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, QtreeNode* qt,
+		std::vector<std::vector<QtreeNode*>>& QtPtr);
 	void rastrizeTriQtreeComp(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, QtreeNode* qt,
+		std::vector<std::vector<QtreeNode*>>& QtPtr);
+	void rastrizeTriQtreeCompFine(std::vector<std::vector<int>>& output,
+		std::vector<std::vector<double>>& depth, QtreeNode* qt,
+		std::vector<std::vector<QtreeNode*>>& QtPtr);
+	void rastrizeTriQtreeCompFinev2(std::vector<std::vector<int>>& output,
 		std::vector<std::vector<double>>& depth, QtreeNode* qt,
 		std::vector<std::vector<QtreeNode*>>& QtPtr);
 	void rastrizeOneTri(std::vector<std::vector<int>>& output,
