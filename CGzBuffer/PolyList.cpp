@@ -500,7 +500,8 @@ void PolyList::activePinter(int y)
 	//	<< _actList->_actedgeInter.size() << std::endl;
 }
 
-void PolyList::rastrizeTri(std::vector<std::vector<int>>& output, std::vector<std::vector<double>>& depth)
+void PolyList::rastrizeTri(std::vector<std::vector<int>>& output, 
+	std::vector<std::vector<double>>& depth)
 {
 	for (int i = 0; i < _poly[0].size(); i++)
 	{

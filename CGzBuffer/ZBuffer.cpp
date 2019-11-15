@@ -47,6 +47,11 @@ void ZBuffer::generateScan()
 		}
 	}
 	clock_t end = clock();
+	std::cout << "Generate with interval scan method --- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
+	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
+	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
+	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
 	std::cout << "Generate scan method --- Totol time use：" << end - start << "ms" << std::endl;	
 	_over = 1;
 }
@@ -85,18 +90,18 @@ void ZBuffer::generateScanInter()
 		}
 	}
 	clock_t end = clock();
-	std::cout << "Generate with interval scan method --- Totol time use：" << end - start << "ms" << std::endl;
 	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
 	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
 	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
 	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
+	std::cout << "Generate with interval scan method --- Totol time use：" << end - start << "ms" << std::endl;
 	_over = 1;
 }
 
 void ZBuffer::generateNaive()
 {
 	_pll->refreshNaive();
-	clock_t start = clock();
+	
 
 	for (int i = 0; i <= V_PIX_NUM; i++)
 	{
@@ -107,8 +112,9 @@ void ZBuffer::generateNaive()
 			_output[i][j] = -1;
 		}
 	}
-	_pll->rastrizeTri(_output, _depthFull);
 
+	clock_t start = clock();
+	_pll->rastrizeTri(_output, _depthFull);
 	clock_t end = clock();
 	std::cout << "Generate with naive method --- Totol time use：" << end - start << "ms" << std::endl;
 	_over = 1;
@@ -330,15 +336,29 @@ void ZBuffer::scan(int y)
 	ActiveList* act = _pll->_actList;
 	//维护：激活该线上的分类多边形； 到尾端的删掉/维护
 	//std::cout << "start ActiveP" << std::endl;
+	clock_t start = clock();
 	_pll->activeP(y);
+	clock_t end = clock();
+	activeTimeUse += (end - start);
+
 	//std::cout << "start delActiveP" << std::endl;
+	start = clock();
 	act->delActiveP(y);
+	end = clock();
+	deleteTimeUse += (end - start);
+
 	//std::cout << "start updateActive" << std::endl;
+	start = clock();
 	act->updataActiveE(y);
+	end = clock();
+	updateTimeUse += (end - start);
 	
 	//绘制
 	//std::cout << "start draw" << std::endl;
+	start = clock();
 	act->draw(y,_depth,_buffer);
+	end = clock();
+	drawTimeUse += (end - start);
 
 	//维护dy
 	act->decDy();

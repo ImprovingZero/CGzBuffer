@@ -11,7 +11,6 @@ struct PolyListNode
 	int id;
 	int dy;
 	double z;
-	vec3 color;
 	PolyListNode(vec3 n, int i, int y, double Z)
 		:nml(n), id(i), dy(y), z(Z){}
 };
