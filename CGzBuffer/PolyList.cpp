@@ -439,7 +439,7 @@ void PolyList::initOctree()
 
 void PolyList::activeP(int y)
 {
-	for (auto a : _poly[y])
+	for (auto& a : _poly[y])
 	{
 		_actList->_actpoly.push_back(a);
 		std::vector<int> temp(2);
@@ -462,15 +462,14 @@ void PolyList::activeP(int y)
 
 void PolyList::activePv2(int y)
 {
-	for (auto a : _poly[y])
+	for (auto& a : _poly[y])
 	{
 		_actList->_actpoly.push_back(a);
-		std::vector<EdgeListNode*> temp(0);
 		if (edges[a->id * 3 + 0] != nullptr && edges[a->id * 3 + 1] != nullptr)
 		{
-			temp.push_back(edges[a->id * 3 + 0]);
-			temp.push_back(edges[a->id * 3 + 1]);
-			_actList->_actedgev2.push_back(temp);
+			_actList->_actedgev2.push_back(
+				std::vector<EdgeListNode*>(2) =
+				{ edges[a->id * 3 + 0],edges[a->id * 3 + 1] });
 		}
 		
 	}
@@ -479,7 +478,7 @@ void PolyList::activePv2(int y)
 void PolyList::activePinter(int y)
 {
 	
-	for (auto a : _poly[y])
+	for (auto& a : _poly[y])
 	{
 		_actList->_actpoly.push_back(a);
 		std::vector<int> temp(2);
@@ -903,6 +902,7 @@ void ActiveList::delActiveP(int y)
 		if ((*p)->dy == 0)
 		{
 			//for naive scan Z buffer:
+			/*
 			for (auto q = _actedge.begin(); q != _actedge.end();)
 			{
 				if ((*p)->id == (*q)->id)
@@ -911,6 +911,7 @@ void ActiveList::delActiveP(int y)
 				}
 				else q++;
 			}
+			*/
 			/*
 			//for interval scan Z buffer
 			for (auto q = _actedgeInter.begin(); q != _actedgeInter.end();)
@@ -926,6 +927,14 @@ void ActiveList::delActiveP(int y)
 			delActivePolyNum++;
 		}
 		else p++;
+	}
+	for (auto q = _actedge.begin(); q != _actedge.end();)
+	{
+		if ((*q)->dyl==0 && (*q)->dyr==0)
+		{
+			q = _actedge.erase(q);
+		}
+		else q++;
 	}
 	for (auto p = _actedgev2.begin(); p != _actedgev2.end();)
 	{
@@ -1014,7 +1023,7 @@ void ActiveList::draw(int y, std::vector<double>& depth, std::vector<int>& buffe
 
 void ActiveList::drawv2(int y, std::vector<double>& depth, std::vector<int>& buffer)
 {
-	for (auto p : _actedgev2)
+	for (auto& p : _actedgev2)
 	{
 		double z = p[0]->z;
 		for (int i = int(p[0]->x); i<int(p[1]->x); i++)

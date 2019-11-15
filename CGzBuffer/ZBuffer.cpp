@@ -47,12 +47,11 @@ void ZBuffer::generateScan()
 		}
 	}
 	clock_t end = clock();
-	std::cout << "Generate with interval scan method --- Totol time use：" << end - start << "ms" << std::endl;
 	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
 	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
 	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
 	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
-	std::cout << "Generate scan method --- Totol time use：" << end - start << "ms" << std::endl;	
+	std::cout << "Generate with ScanV2 --- Totol time use：" << end - start << "ms" << std::endl;
 	_over = 1;
 }
 
@@ -71,6 +70,10 @@ void ZBuffer::generateScanWithoutClassEdge()
 		}
 	}
 	clock_t end = clock();
+	std::cout << "Active Polygon part time use: " << activeTimeUse << "ms" << std::endl;
+	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
+	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
+	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
 	std::cout << "Generate scan method without classified edges --- Totol time use：" << end - start << "ms" << std::endl;
 	_over = 1;
 }
@@ -94,7 +97,7 @@ void ZBuffer::generateScanInter()
 	std::cout << "Delete part time use: " << deleteTimeUse << "ms" << std::endl;
 	std::cout << "Update part time use: " << updateTimeUse << "ms" << std::endl;
 	std::cout << "Draw part time use: " << drawTimeUse << "ms" << std::endl;
-	std::cout << "Generate with interval scan method --- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with ScanInterval --- Totol time use：" << end - start << "ms" << std::endl;
 	_over = 1;
 }
 
@@ -187,7 +190,7 @@ void ZBuffer::generateQtreeComplete()
 	_pll->rastrizeTriQtreeComp(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
 	
-	std::cout << "Generate with QTree Complete --- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with QTreeComp --- Totol time use：" << end - start << "ms" << std::endl;
 	
 	_over = 1;
 	delete _Qtree;
@@ -218,7 +221,7 @@ void ZBuffer::generateFineQtree()
 	clock_t start = clock();
 	_pll->rastrizeTriQtreeFine(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
-	std::cout << "Generate with QTree --- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with QTreeFine --- Totol time use：" << end - start << "ms" << std::endl;
 	
 	_over = 1;
 	delete _Qtree;
@@ -253,7 +256,7 @@ void ZBuffer::generateFineQtreeComp()
 	_pll->rastrizeTriQtreeCompFine(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
 
-	std::cout << "Generate with QTree Complete --- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with QTreeFineComp --- Totol time use：" << end - start << "ms" << std::endl;
 
 	_over = 1;
 	delete _Qtree;
@@ -283,7 +286,7 @@ void ZBuffer::generateFineQtreev2()
 	clock_t start = clock();
 	_pll->rastrizeTriQtreeFinev2(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
-	std::cout << "Generate with QTree (Fine version & draw visible pixels)--- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with QTreeDraw--- Totol time use：" << end - start << "ms" << std::endl;
 
 	_over = 1;
 	delete _Qtree;
@@ -318,7 +321,7 @@ void ZBuffer::generateFineQtreeCompv2()
 	_pll->rastrizeTriQtreeCompFinev2(_output, _depthFull, _Qtree, _QtPtr);
 	clock_t end = clock();
 
-	std::cout << "Generate with QTree Complete (Fine version & draw visible pixels)--- Totol time use：" << end - start << "ms" << std::endl;
+	std::cout << "Generate with QTreeDrawComp--- Totol time use：" << end - start << "ms" << std::endl;
 
 	_over = 1;
 	delete _Qtree;
@@ -420,15 +423,30 @@ void ZBuffer::scanWithoutClassifiedEdges(int y)
 	ActiveList* act = _pll->_actList;
 	//维护：激活该线上的分类多边形； 到尾端的删掉/维护
 	//std::cout << "start ActiveP" << std::endl;
+	clock_t start = clock();
 	_pll->activePv2(y);
+	clock_t end = clock();
+	activeTimeUse += (end - start);
+	
 	//std::cout << "start delActiveP" << std::endl;
+	start = clock();
 	act->delActiveP(y);
+	end = clock();
+	deleteTimeUse += (end - start);
+
 	//std::cout << "start updateActive" << std::endl;
+	start = clock();
 	act->updateActiveEv2(y);
+	end = clock();
+	updateTimeUse += (end - start);
+	
 
 	//绘制
 	//std::cout << "start draw" << std::endl;
+	start = clock();
 	act->drawv2(y, _depth, _buffer);
+	end = clock();
+	drawTimeUse += (end - start);
 
 	//维护dy
 	act->decDy();
